@@ -1,0 +1,53 @@
+package com.example.cube.mapper;
+
+import com.example.cube.dto.request.CubeRequestDTO;
+import com.example.cube.dto.response.CubeResponseDTO;
+import com.example.cube.model.Cube;
+import com.example.cube.model.DurationOption;
+import org.springframework.stereotype.Component;
+
+/**
+ * Handles conversions between Cube entities, request DTOs, and response DTOs.
+ */
+@Component
+public class CubeMapper {
+
+    // Request → Entity
+    public Cube toEntity(CubeRequestDTO dto) {
+        Cube cube = new Cube();
+        DurationOption duration = new DurationOption(); // temporary placeholder
+
+        duration.setDurationId(dto.getDurationId());
+        cube.setName(dto.getName());
+        cube.setDescription(dto.getDescription());
+        cube.setUser_id(dto.getUser_id());
+        cube.setAmountPerCycle(dto.getAmountPerCycle());
+        cube.setNumberofmembers(dto.getNumberofmembers());
+        cube.setStartDate(dto.getStartDate());
+        cube.setCurrency(dto.getCurrency());
+        cube.setDuration(duration);
+        return cube;
+    }
+
+    // Entity → Response
+    public CubeResponseDTO toResponse(Cube cube){
+        CubeResponseDTO res = new CubeResponseDTO();
+        res.setCubeId(cube.getCubeId());
+        res.setName(cube.getName());
+        res.setDescription(cube.getDescription());
+        res.setUser_id(cube.getUser_id());
+        res.setAmountPerCycle(cube.getAmountPerCycle());
+        res.setNumberofmembers(cube.getNumberofmembers());
+        res.setCurrency(cube.getCurrency());
+        res.setStartDate(cube.getStartDate());
+        res.setEndDate(cube.getEndDate());
+        res.setNextPayoutDate(cube.getNextPayoutDate());
+
+        if (cube.getDuration() != null) {
+            res.setDurationId(cube.getDuration().getDurationId());
+            res.setDurationName(cube.getDuration().getDurationName());
+            res.setDurationDays(cube.getDuration().getDurationDays());
+        }
+        return res;
+    }
+}
