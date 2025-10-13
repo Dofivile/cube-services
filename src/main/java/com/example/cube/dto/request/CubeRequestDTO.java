@@ -30,7 +30,8 @@ public class CubeRequestDTO {
     private Integer numberofmembers;
     @NotNull
     private Instant startDate;
-
+    @NotNull
+    private Instant endDate;
     @NotBlank
     private String currency;
 

@@ -22,4 +22,5 @@ public interface CubeService {
 
     // Delete a Cube
     void deleteCube(UUID cubeId);
+    
 }

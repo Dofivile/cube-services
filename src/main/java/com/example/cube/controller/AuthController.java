@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/cube/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserAuthService userAuthService;

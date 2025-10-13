@@ -50,4 +50,5 @@ public class CubeMapper {
         }
         return res;
     }
+
 }
