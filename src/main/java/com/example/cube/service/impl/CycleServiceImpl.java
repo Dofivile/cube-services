@@ -70,17 +70,23 @@ public class CycleServiceImpl implements CycleService {
             throw new RuntimeException("Cube already started");
         }
 
-        // 5. Calculate total to be collected
-        BigDecimal totalToBeCollected = cube.getAmountPerCycle()
-                .multiply(BigDecimal.valueOf(cube.getNumberofmembers()))
-                .multiply(BigDecimal.valueOf(cube.getNumberofmembers()));
+        // 5. Check if all members have paid for cycle 1
+        long paidMembers = paymentTransactionRepository
+                .countByCubeIdAndCycleNumberAndTypeIdAndStatusId(
+                        cubeId,
+                        0,  // cycle 1
+                        1,  // contribution
+                        2   // completed
+                );
 
-        // 6. Set cube to pending payment (waiting for all members to pay)
-        cube.setStatusId(4);  // pending_payment
+        if (paidMembers < memberCount) {
+            throw new RuntimeException("Cannot start cube: Only " + paidMembers + "/" + memberCount + " members have paid");
+        }
+
+        // 6. Activate the cube
+        cube.setStatusId(2);  // active
         cube.setCurrentCycle(1);
         cube.setStartDate(Instant.now());
-        cube.setTotalToBeCollected(totalToBeCollected);
-        cube.setTotalAmountCollected(BigDecimal.ZERO);
         cube.setNextPayoutDate(calculateNextPayoutDate(cube));
 
         return cubeRepository.save(cube);
@@ -100,18 +106,8 @@ public class CycleServiceImpl implements CycleService {
             throw new RuntimeException("Cube must be active to process cycle. Current status: " + cube.getStatusId());
         }
 
-        // Check if all members have paid for this cycle
-        if (!haveAllMembersPaid(cubeId, currentCycle)) {
-            throw new RuntimeException("Cannot process cycle: Not all members have paid for cycle " + currentCycle);
-        }
-
         // 1. Get all members (payments already recorded via recordMemberPayment)
         List<CubeMember> allMembers = cubeMemberRepository.findByCubeId(cubeId);
-
-        // Update cube total collected (should already be updated, but ensuring consistency)
-        BigDecimal cycleContribution = cube.getAmountPerCycle()
-                .multiply(BigDecimal.valueOf(cube.getNumberofmembers()));
-        cube.setTotalAmountCollected(cube.getTotalAmountCollected().add(cycleContribution));
 
         // 2. Select random winner from unpaid members
         List<CubeMember> unpaidMembers = cubeMemberRepository
@@ -339,7 +335,7 @@ public class CycleServiceImpl implements CycleService {
         long paidMembers = paymentTransactionRepository
                 .countByCubeIdAndCycleNumberAndTypeIdAndStatusId(
                         cubeId,
-                        cycleNumber,
+                        cycleNumber -1,
                         1,  // typeId = 1 (contribution)
                         2   // statusId = 2 (completed)
                 );

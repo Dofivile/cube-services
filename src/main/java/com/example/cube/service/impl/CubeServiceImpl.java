@@ -11,6 +11,8 @@ import com.example.cube.service.CubeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,9 +39,17 @@ public class CubeServiceImpl implements CubeService {
         // 1. Create the cube
         Cube cube = cubeMapper.toEntity(cubeRequestDTO);
         cube.setDuration(durationRepo.getReferenceById(cubeRequestDTO.getDurationId()));
+        cube.setRotationId(1);  // Set rotation system to random (1)
+        
+        // 2. Calculate total to be collected
+        BigDecimal totalToBeCollected = cubeRequestDTO.getAmountPerCycle()
+                .multiply(BigDecimal.valueOf(cubeRequestDTO.getNumberofmembers()))
+                .multiply(BigDecimal.valueOf(cubeRequestDTO.getNumberofmembers()));
+        cube.setTotalToBeCollected(totalToBeCollected);
+        
         Cube savedCube = cubeRepository.save(cube);
 
-        // 2. Add creator as admin member
+        // 3. Add creator as admin member
         CubeMember creatorMember = new CubeMember();
         creatorMember.setCubeId(savedCube.getCubeId());
         creatorMember.setUserId(cubeRequestDTO.getUser_id());

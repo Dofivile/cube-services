@@ -24,6 +24,7 @@ public class CubeMapper {
         cube.setAmountPerCycle(dto.getAmountPerCycle());
         cube.setNumberofmembers(dto.getNumberofmembers());
         cube.setStartDate(dto.getStartDate());
+        cube.setEndDate(dto.getEndDate());
         cube.setCurrency(dto.getCurrency());
         cube.setDuration(duration);
         return cube;
@@ -42,11 +43,11 @@ public class CubeMapper {
         res.setStartDate(cube.getStartDate());
         res.setEndDate(cube.getEndDate());
         res.setNextPayoutDate(cube.getNextPayoutDate());
+        res.setTotalToBeCollected(cube.getTotalToBeCollected());
+        res.setCreatedAt(cube.getCreatedAt());
 
         if (cube.getDuration() != null) {
             res.setDurationId(cube.getDuration().getDurationId());
-            res.setDurationName(cube.getDuration().getDurationName());
-            res.setDurationDays(cube.getDuration().getDurationDays());
         }
         return res;
     }

@@ -20,8 +20,7 @@ public class CubeResponseDTO {
     private Instant endDate;
     private Instant nextPayoutDate;
     private Integer durationId;
-    private String durationName;
-    private Integer durationDays;
+    private BigDecimal totalToBeCollected;
     private Instant createdAt;
 
     // Getters and Setters
@@ -50,6 +49,15 @@ public class CubeResponseDTO {
     public void setStartDate(Instant startDate) { this.startDate = startDate; }
 
     public Instant getEndDate() { return endDate; }
+
+    public void setTotalToBeCollected(BigDecimal totalToBeCollected) {
+        this.totalToBeCollected = totalToBeCollected;
+    }
+
+    public BigDecimal getTotalToBeCollected() {
+        return totalToBeCollected;
+    }
+
     public void setEndDate(Instant endDate) { this.endDate = endDate; }
 
     public Instant getNextPayoutDate() { return nextPayoutDate; }
@@ -57,12 +65,6 @@ public class CubeResponseDTO {
 
     public Integer getDurationId() { return durationId; }
     public void setDurationId(Integer durationId) { this.durationId = durationId; }
-
-    public String getDurationName() { return durationName; }
-    public void setDurationName(String durationName) { this.durationName = durationName; }
-
-    public Integer getDurationDays() { return durationDays; }
-    public void setDurationDays(Integer durationDays) { this.durationDays = durationDays; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
