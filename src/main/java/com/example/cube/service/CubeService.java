@@ -1,6 +1,6 @@
 package com.example.cube.service;
 
-import com.example.cube.dto.request.CubeRequestDTO;
+import com.example.cube.dto.request.CreateCubeRequest;
 import com.example.cube.model.Cube;
 import java.util.List;
 import java.util.UUID;
@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface CubeService {
 
     // Create a new Cube from DTO (used by frontend requests)
-    Cube createCubeFromDTO(CubeRequestDTO cubeRequestDTO);
+    Cube createCubeFromDTO(CreateCubeRequest createCubeRequest);
 
     // Retrieve all Cubes
     List<Cube> getAllCubes();
@@ -22,5 +22,5 @@ public interface CubeService {
 
     // Delete a Cube
     void deleteCube(UUID cubeId);
-    
+
 }

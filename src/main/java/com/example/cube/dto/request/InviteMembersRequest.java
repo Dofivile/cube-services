@@ -5,7 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 
-public class InviteMembersRequestDTO {
+public class InviteMembersRequest {
+
+    @NotNull(message = "Cube ID is required")
+    private UUID cubeId;  // ← ADD THIS
 
     @NotEmpty(message = "Must invite at least one member")
     private List<UUID> userIds;
@@ -14,6 +17,14 @@ public class InviteMembersRequestDTO {
     private Integer roleId;
 
     // Getters and Setters
+    public UUID getCubeId() {
+        return cubeId;
+    }
+
+    public void setCubeId(UUID cubeId) {
+        this.cubeId = cubeId;
+    }
+
     public List<UUID> getUserIds() {
         return userIds;
     }

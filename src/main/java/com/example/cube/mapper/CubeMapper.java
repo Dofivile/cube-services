@@ -1,7 +1,8 @@
 package com.example.cube.mapper;
 
-import com.example.cube.dto.request.CubeRequestDTO;
-import com.example.cube.dto.response.CubeResponseDTO;
+import com.example.cube.dto.request.CreateCubeRequest;
+import com.example.cube.dto.response.CreateCubeResponse;
+import com.example.cube.dto.response.StartCubeResponse;
 import com.example.cube.model.Cube;
 import com.example.cube.model.DurationOption;
 import org.springframework.stereotype.Component;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class CubeMapper {
 
     // Request → Entity
-    public Cube toEntity(CubeRequestDTO dto) {
+    public Cube toEntity(CreateCubeRequest dto) {
         Cube cube = new Cube();
         DurationOption duration = new DurationOption(); // temporary placeholder
 
@@ -31,8 +32,8 @@ public class CubeMapper {
     }
 
     // Entity → Response
-    public CubeResponseDTO toResponse(Cube cube){
-        CubeResponseDTO res = new CubeResponseDTO();
+    public CreateCubeResponse toResponse(Cube cube){
+        CreateCubeResponse res = new CreateCubeResponse();
         res.setCubeId(cube.getCubeId());
         res.setName(cube.getName());
         res.setDescription(cube.getDescription());
@@ -50,6 +51,12 @@ public class CubeMapper {
             res.setDurationId(cube.getDuration().getDurationId());
         }
         return res;
+    }
+
+    // Entity → StartCubeResponse
+    public StartCubeResponse toStartCubeResponse(Cube cube) {
+        return new StartCubeResponse(cube.getCubeId(), cube.getStatusId(), cube.getCurrentCycle(),
+            cube.getStartDate(), cube.getEndDate(), cube.getTotalToBeCollected());
     }
 
 }

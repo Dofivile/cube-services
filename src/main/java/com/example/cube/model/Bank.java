@@ -18,13 +18,10 @@ public class Bank {
     @Column(name = "amount", nullable = false)
     private BigDecimal amount = BigDecimal.ZERO;
 
-    // Getters and Setters
-    public Integer getBankId() {
-        return bankId;
-    }
 
-    public void setBankId(Integer bankId) {
-        this.bankId = bankId;
+    public Integer getBankId() { return bankId;}
+
+    public void setBankId(Integer bankId) { this.bankId = bankId;
     }
 
     public BigDecimal getAmount() {

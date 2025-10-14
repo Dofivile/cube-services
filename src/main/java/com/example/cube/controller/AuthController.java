@@ -1,16 +1,14 @@
 package com.example.cube.controller;
 
-import com.example.cube.dto.request.AuthRequestDTO;
+import com.example.cube.dto.request.auth.SignInAuthRequest;
+import com.example.cube.dto.request.auth.SignUpAuthRequest;
+import com.example.cube.dto.response.auth.SignInAuthResponse;
+import com.example.cube.dto.response.auth.SignUpAuthResponse;
 import com.example.cube.service.supabass.UserAuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,24 +22,14 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<Map<String, Boolean>> signup(@Valid @RequestBody AuthRequestDTO req) {
-        userAuthService.signUp(req);
-        return ResponseEntity.ok(Map.of("success", true));
+    public ResponseEntity<SignUpAuthResponse> signup(@Valid @RequestBody SignUpAuthRequest req) {
+        SignUpAuthResponse response = userAuthService.signUp(req);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<Map<String, String>> signIn(@RequestBody AuthRequestDTO req) {
-        ResponseEntity<String> response = userAuthService.signIn(req);
-        if (response.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.ok(Map.of(
-                    "success", "true",
-                    "message", "Sign-in successful",
-                    "token", response.getBody()
-            ));
-        }
-        return ResponseEntity.status(response.getStatusCode()).body(Map.of(
-                "success", "false",
-                "message", "Invalid credentials"
-        ));
+    public ResponseEntity<SignInAuthResponse> signIn(@Valid @RequestBody SignInAuthRequest req) {
+        SignInAuthResponse response = userAuthService.signIn(req);
+        return ResponseEntity.ok(response);
     }
 }

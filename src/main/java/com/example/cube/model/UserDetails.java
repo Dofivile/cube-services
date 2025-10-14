@@ -23,6 +23,15 @@ public class UserDetails {
     @Column(name = "kycverifiedat")
     private Instant kycverifiedat;
 
+    @Column(name = "bankaccountverified")
+    private Boolean bankaccountverified = false;
+
+    @Column(name = "defaultpaymentmethodid", columnDefinition = "uuid")
+    private UUID defaultpaymentmethodid;
+
+    @Column(name = "phonenumber")
+    private String phonenumber;
+
     public void setBankaccountverified(Boolean bankaccountverified) {
         this.bankaccountverified = bankaccountverified;
     }
@@ -43,22 +52,11 @@ public class UserDetails {
         this.kycverifiedat = kycverifiedat;
     }
 
-    public void setDefaultpaymentmethodid(UUID defaultpaymentmethodid) {
-        this.defaultpaymentmethodid = defaultpaymentmethodid;
-    }
+    public void setDefaultpaymentmethodid(UUID defaultpaymentmethodid) {this.defaultpaymentmethodid = defaultpaymentmethodid;}
 
     public void setPhonenumber(String phonenumber) {
         this.phonenumber = phonenumber;
     }
-
-    @Column(name = "bankaccountverified")
-    private Boolean bankaccountverified = false;
-
-    @Column(name = "defaultpaymentmethodid", columnDefinition = "uuid")
-    private UUID defaultpaymentmethodid;
-
-    @Column(name = "phonenumber")
-    private String phonenumber;
 
     public UUID getUser_id() {
         return user_id;

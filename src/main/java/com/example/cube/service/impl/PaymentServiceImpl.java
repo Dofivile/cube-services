@@ -1,7 +1,7 @@
 package com.example.cube.service.impl;
 
 import com.example.cube.dto.request.PaymentRequestDTO;
-import com.example.cube.dto.response.PaymentResponseDTO;
+import com.example.cube.dto.response.PaymentResponse;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeMember;
 import com.example.cube.model.PaymentTransaction;
@@ -37,7 +37,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public PaymentResponseDTO processPayment(PaymentRequestDTO request) {
+    public PaymentResponse processPayment(PaymentRequestDTO request) {
 
         try {
             // 1. Get cube
@@ -116,11 +116,11 @@ public class PaymentServiceImpl implements PaymentService {
             cubeRepository.save(cube);
 
             // 12. Return success response
-            return new PaymentResponseDTO(true);
+            return new PaymentResponse(true);
 
         } catch (Exception e) {
             // Log the error (you can add logging here)
-            return new PaymentResponseDTO(false);
+            return new PaymentResponse(false);
         }
     }
 }

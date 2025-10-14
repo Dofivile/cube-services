@@ -1,9 +1,9 @@
 package com.example.cube.service;
 
-import com.example.cube.dto.request.InviteMembersRequestDTO;
-import com.example.cube.dto.response.InviteMembersResponseDTO;
+import com.example.cube.dto.request.InviteMembersRequest;
+import com.example.cube.dto.response.InviteMembersResponse;
 import java.util.UUID;
 
 public interface MemberService {
-    InviteMembersResponseDTO inviteMembers(UUID cubeId, InviteMembersRequestDTO request, UUID invitedBy);
+    InviteMembersResponse inviteMembers(UUID cubeId, InviteMembersRequest request, UUID invitedBy);
 }

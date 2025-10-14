@@ -1,7 +1,7 @@
 package com.example.cube.controller;
 
-import com.example.cube.dto.request.CubeRequestDTO;
-import com.example.cube.dto.response.CubeResponseDTO;
+import com.example.cube.dto.request.CreateCubeRequest;
+import com.example.cube.dto.response.CreateCubeResponse;
 import com.example.cube.mapper.CubeMapper;
 import com.example.cube.model.Cube;
 import com.example.cube.security.AuthenticationService;
@@ -10,8 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 /**
  * Controller for Cube-related endpoints.
@@ -26,23 +24,20 @@ public class CubeController {
     private final AuthenticationService authenticationService;
 
     @Autowired
-    public CubeController(CubeService cubeService,
-                          CubeMapper cubeMapper,
-                          AuthenticationService authenticationService) {
+    public CubeController(CubeService cubeService, CubeMapper cubeMapper, AuthenticationService authenticationService) {
         this.cubeService = cubeService;
         this.cubeMapper = cubeMapper;
         this.authenticationService = authenticationService;
     }
 
     @PostMapping("/create")
-    public ResponseEntity<CubeResponseDTO> createCube(@RequestHeader("Authorization") String authHeader,
-            @RequestBody CubeRequestDTO cubeRequestDTO) {
-
+    public ResponseEntity<CreateCubeResponse> createCube(@RequestHeader("Authorization") String authHeader,
+                                                         @RequestBody CreateCubeRequest createCubeRequest) {
         // Validate and extract user ID (throws UnauthorizedException if invalid)
-        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+        authenticationService.validateAndExtractUserId(authHeader);
 
-        Cube savedCube = cubeService.createCubeFromDTO(cubeRequestDTO);
-        CubeResponseDTO response = cubeMapper.toResponse(savedCube);
+        Cube savedCube = cubeService.createCubeFromDTO(createCubeRequest);
+        CreateCubeResponse response = cubeMapper.toResponse(savedCube);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }

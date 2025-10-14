@@ -1,7 +1,7 @@
 package com.example.cube.service;
 
 import com.example.cube.dto.request.PaymentRequestDTO;
-import com.example.cube.dto.response.PaymentResponseDTO;
+import com.example.cube.dto.response.PaymentResponse;
 
 public interface PaymentService {
 
@@ -12,5 +12,5 @@ public interface PaymentService {
      * @param request Payment request containing userId, cubeId, memberId, cycleNumber
      * @return Payment response with success status
      */
-    PaymentResponseDTO processPayment(PaymentRequestDTO request);
+    PaymentResponse processPayment(PaymentRequestDTO request);
 }

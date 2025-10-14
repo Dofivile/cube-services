@@ -40,8 +40,8 @@ public class Cube {
     private Instant nextPayoutDate;
 
     @Column(name = "current_cycle")
-    private Integer currentCycle = 0;
-// we need
+    private Integer currentCycle;
+
     @Column(name = "total_amount_collected")
     private BigDecimal totalAmountCollected = BigDecimal.ZERO;
 
@@ -63,143 +63,71 @@ public class Cube {
     @Column(name = "end_date", nullable = false)
     private Instant endDate;
 
-    // Constructors
-    public Cube() {}
+    public UUID getCubeId() { return cubeId;}
 
-    // Getters and Setters
-    public UUID getCubeId() {
-        return cubeId;
-    }
+    public void setCubeId(UUID cubeId) {this.cubeId = cubeId;}
 
-    public void setCubeId(UUID cubeId) {
-        this.cubeId = cubeId;
-    }
+    public String getName() { return name;}
 
-    public String getName() {
-        return name;
-    }
+    public void setName(String name) {this.name = name;}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getDescription() {return description; }
 
-    public String getDescription() {
-        return description;
-    }
+    public void setDescription(String description) { this.description = description;}
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public UUID getUser_id() { return user_id; }
 
-    public UUID getUser_id() {
-        return user_id;
-    }
+    public void setUser_id(UUID user_id) { this.user_id = user_id; }
 
-    public void setUser_id(UUID user_id) {
-        this.user_id = user_id;
-    }
+    public BigDecimal getAmountPerCycle() { return amountPerCycle; }
 
-    public BigDecimal getAmountPerCycle() {
-        return amountPerCycle;
-    }
+    public void setAmountPerCycle(BigDecimal amountPerCycle) { this.amountPerCycle = amountPerCycle; }
 
-    public void setAmountPerCycle(BigDecimal amountPerCycle) {
-        this.amountPerCycle = amountPerCycle;
-    }
+    public String getCurrency() { return currency; }
 
-    public String getCurrency() {
-        return currency;
-    }
+    public void setCurrency(String currency) { this.currency = currency; }
 
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
+    public Integer getNumberofmembers() { return numberofmembers;}
 
-    public Integer getNumberofmembers() {
-        return numberofmembers;
-    }
+    public void setNumberofmembers(Integer numberofmembers) { this.numberofmembers = numberofmembers;}
 
-    public void setNumberofmembers(Integer numberofmembers) {
-        this.numberofmembers = numberofmembers;
-    }
+    public DurationOption getDuration() { return duration;}
 
-    public DurationOption getDuration() {
-        return duration;
-    }
+    public void setDuration(DurationOption duration) {this.duration = duration;}
 
-    public void setDuration(DurationOption duration) {
-        this.duration = duration;
-    }
+    public Instant getStartDate() { return startDate;}
 
-    public Instant getStartDate() {
-        return startDate;
-    }
+    public void setStartDate(Instant startDate) {this.startDate = startDate;}
 
-    public void setStartDate(Instant startDate) {
-        this.startDate = startDate;
-    }
+    public Instant getEndDate() {return endDate;}
 
-    public Instant getEndDate() {
-        return endDate;
-    }
+    public void setEndDate(Instant endDate) { this.endDate = endDate; }
 
-    public void setEndDate(Instant endDate) {
-        this.endDate = endDate;
-    }
+    public Instant getNextPayoutDate() { return nextPayoutDate; }
 
-    public Instant getNextPayoutDate() {
-        return nextPayoutDate;
-    }
+    public void setNextPayoutDate(Instant nextPayoutDate) { this.nextPayoutDate = nextPayoutDate; }
 
-    public void setNextPayoutDate(Instant nextPayoutDate) {
-        this.nextPayoutDate = nextPayoutDate;
-    }
+    public Integer getCurrentCycle() { return currentCycle;}
 
-    public Integer getCurrentCycle() {
-        return currentCycle;
-    }
+    public void setCurrentCycle(Integer currentCycle) { this.currentCycle = currentCycle; }
 
-    public void setCurrentCycle(Integer currentCycle) {
-        this.currentCycle = currentCycle;
-    }
+    public BigDecimal getTotalAmountCollected() { return totalAmountCollected; }
 
-    public BigDecimal getTotalAmountCollected() {
-        return totalAmountCollected;
-    }
+    public void setTotalAmountCollected(BigDecimal totalAmountCollected) { this.totalAmountCollected = totalAmountCollected;}
 
-    public void setTotalAmountCollected(BigDecimal totalAmountCollected) {
-        this.totalAmountCollected = totalAmountCollected;
-    }
+    public BigDecimal getTotalToBeCollected() { return totalToBeCollected; }
 
-    public BigDecimal getTotalToBeCollected() {
-        return totalToBeCollected;
-    }
+    public void setTotalToBeCollected(BigDecimal totalToBeCollected) { this.totalToBeCollected = totalToBeCollected; }
 
-    public void setTotalToBeCollected(BigDecimal totalToBeCollected) {
-        this.totalToBeCollected = totalToBeCollected;
-    }
+    public Integer getStatusId() { return statusId; }
 
-    public Integer getStatusId() {
-        return statusId;
-    }
+    public void setStatusId(Integer statusId) { this.statusId = statusId; }
 
-    public void setStatusId(Integer statusId) {
-        this.statusId = statusId;
-    }
+    public Instant getCreatedAt() { return createdAt; }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
+    public Integer getRotationId() { return rotationId; }
 
-    public Integer getRotationId() {
-        return rotationId;
-    }
-
-    public void setRotationId(Integer rotationId) {
-        this.rotationId = rotationId;
-    }
+    public void setRotationId(Integer rotationId) { this.rotationId = rotationId; }
 }

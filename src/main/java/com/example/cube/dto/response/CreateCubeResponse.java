@@ -1,41 +1,32 @@
-package com.example.cube.dto.request;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+package com.example.cube.dto.response;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
 /**
- * DTO for creating a Cube.
- * Only includes fields the frontend should send.
- * The database will handle IDs and timestamps.
+ * Response DTO for returning Cube details to the frontend.
  */
-public class CubeRequestDTO {
+public class CreateCubeResponse {
 
-    @NotBlank
+    private UUID cubeId;
     private String name;
     private String description;
-    @NotNull
     private UUID user_id;
-    @NotNull
-    @Positive
     private BigDecimal amountPerCycle;
-    @NotNull
-    private Integer durationId;
-    @NotNull
-    @Positive
     private Integer numberofmembers;
-    @NotNull
-    private Instant startDate;
-    @NotNull
-    private Instant endDate;
-    @NotBlank
     private String currency;
+    private Instant startDate;
+    private Instant endDate;
+    private Instant nextPayoutDate;
+    private Integer durationId;
+    private BigDecimal totalToBeCollected;
+    private Instant createdAt;
 
-    // Getters and setters
+    // Getters and Setters
+    public UUID getCubeId() { return cubeId; }
+    public void setCubeId(UUID cubeId) { this.cubeId = cubeId; }
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
@@ -48,18 +39,33 @@ public class CubeRequestDTO {
     public BigDecimal getAmountPerCycle() { return amountPerCycle; }
     public void setAmountPerCycle(BigDecimal amountPerCycle) { this.amountPerCycle = amountPerCycle; }
 
-    public Integer getDurationId() {return durationId;}
-    public void setDurationId(Integer durationId) {this.durationId = durationId;}
-
     public Integer getNumberofmembers() { return numberofmembers; }
     public void setNumberofmembers(Integer numberofmembers) { this.numberofmembers = numberofmembers; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public Instant getStartDate() { return startDate; }
     public void setStartDate(Instant startDate) { this.startDate = startDate; }
 
     public Instant getEndDate() { return endDate; }
+
+    public void setTotalToBeCollected(BigDecimal totalToBeCollected) {
+        this.totalToBeCollected = totalToBeCollected;
+    }
+
+    public BigDecimal getTotalToBeCollected() {
+        return totalToBeCollected;
+    }
+
     public void setEndDate(Instant endDate) { this.endDate = endDate; }
 
-    public String getCurrency() { return currency; }
-    public void setCurrency(String currency) { this.currency = currency; }
+    public Instant getNextPayoutDate() { return nextPayoutDate; }
+    public void setNextPayoutDate(Instant nextPayoutDate) { this.nextPayoutDate = nextPayoutDate; }
+
+    public Integer getDurationId() { return durationId; }
+    public void setDurationId(Integer durationId) { this.durationId = durationId; }
+
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

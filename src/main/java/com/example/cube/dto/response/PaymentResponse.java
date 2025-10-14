@@ -3,14 +3,14 @@ package com.example.cube.dto.response;
 /**
  * Response DTO for payment processing
  */
-public class PaymentResponseDTO {
+public class PaymentResponse {
 
     private Boolean success;
 
     // Constructor
-    public PaymentResponseDTO() {}
+    public PaymentResponse() {}
 
-    public PaymentResponseDTO(Boolean success) {
+    public PaymentResponse(Boolean success) {
         this.success = success;
     }
 

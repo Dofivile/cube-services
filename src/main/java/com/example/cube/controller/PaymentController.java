@@ -1,7 +1,7 @@
 package com.example.cube.controller;
 
 import com.example.cube.dto.request.PaymentRequestDTO;
-import com.example.cube.dto.response.PaymentResponseDTO;
+import com.example.cube.dto.response.PaymentResponse;
 import com.example.cube.service.PaymentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +24,10 @@ public class PaymentController {
      * Process a member's payment for a cycle
      */
     @PostMapping
-    public ResponseEntity<PaymentResponseDTO> processPayment(
+    public ResponseEntity<PaymentResponse> processPayment(
             @Valid @RequestBody PaymentRequestDTO request) {
 
-        PaymentResponseDTO response = paymentService.processPayment(request);
+        PaymentResponse response = paymentService.processPayment(request);
         return ResponseEntity.ok(response);
     }
 }

@@ -3,7 +3,7 @@ package com.example.cube.dto.response;
 import java.util.Map;
 import java.util.UUID;
 
-public class InviteMembersResponseDTO {
+public class InviteMembersResponse {
 
     private UUID cubeId;
     private Map<String, String> results;  // userId -> status

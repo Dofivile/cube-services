@@ -1,10 +1,14 @@
 package com.example.cube.controller;
 
+import com.example.cube.dto.request.StartCubeRequest;
 import com.example.cube.dto.response.CycleProcessDTO;
 import com.example.cube.dto.response.CycleStatusDTO;
+import com.example.cube.dto.response.StartCubeResponse;
+import com.example.cube.mapper.CubeMapper;
 import com.example.cube.model.Cube;
 import com.example.cube.security.AuthenticationService;
 import com.example.cube.service.CycleService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,27 +21,33 @@ import java.util.UUID;
 public class CycleController {
 
     private final CycleService cycleService;
+    private final CubeMapper cubeMapper;
     private final AuthenticationService authenticationService;
 
     @Autowired
-    public CycleController(CycleService cycleService,
-                           AuthenticationService authenticationService) {
+    public CycleController(CycleService cycleService,CubeMapper cubeMapper,AuthenticationService authenticationService) {
         this.cycleService = cycleService;
+        this.cubeMapper = cubeMapper;
         this.authenticationService = authenticationService;
     }
+
 
     /**
      * POST /api/cubes/{cubeId}/start
      * Start a cube (transition from draft to pending_payment)
      */
-    @PostMapping("/{cubeId}/start")
-    public ResponseEntity<Cube> startCube(
-            @PathVariable UUID cubeId,
+    @PostMapping("/start")
+    public ResponseEntity<StartCubeResponse> startCube(
+            @Valid @RequestBody StartCubeRequest request,
             @RequestHeader("Authorization") String authHeader) {
 
         UUID userId = authenticationService.validateAndExtractUserId(authHeader);
-        Cube cube = cycleService.startCube(cubeId, userId);
-        return ResponseEntity.ok(cube);
+        Cube cube = cycleService.startCube(request.getCubeId(), userId);
+
+        // Use mapper to build response DTO
+        StartCubeResponse response = cubeMapper.toStartCubeResponse(cube);
+
+        return ResponseEntity.ok(response);
     }
 
     /**

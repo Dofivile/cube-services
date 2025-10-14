@@ -1,10 +1,10 @@
-package com.example.cube.dto.request;
+package com.example.cube.dto.request.auth;
 
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDate;
 
-public class AuthRequestDTO {
+public class SignUpAuthRequest {
     @NotBlank
     private String email;
     @NotBlank private String password;

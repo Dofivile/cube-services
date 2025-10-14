@@ -1,6 +1,7 @@
 package com.example.cube.security;
 
 import com.example.cube.exception.UnauthorizedException;
+import com.example.cube.repository.UserDetailsRepository;
 import com.example.cube.service.supabass.TokenValidator;
 import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,38 +13,35 @@ import java.util.UUID;
 public class AuthenticationService {
 
     private final TokenValidator tokenValidator;
+    private final UserDetailsRepository userRepository;  // Add this
 
     @Autowired
-    public AuthenticationService(TokenValidator tokenValidator) {
+    public AuthenticationService(TokenValidator tokenValidator, UserDetailsRepository userRepository) {
         this.tokenValidator = tokenValidator;
+        this.userRepository = userRepository;
     }
 
-    /**
-     * Validates Authorization header and extracts user ID from JWT token
-     * @param authHeader The Authorization header value (should start with "Bearer ")
-     * @return The user ID extracted from the token
-     * @throws UnauthorizedException if token is missing, invalid, or expired
-     */
     public UUID validateAndExtractUserId(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new UnauthorizedException("Missing or invalid Authorization header");
         }
 
-        String token = authHeader.substring(7); // Remove "Bearer " prefix
+        String token = authHeader.substring(7);
 
         if (!tokenValidator.validateToken(token)) {
             throw new UnauthorizedException("Invalid or expired token");
         }
 
-        return extractUserIdFromToken(token);
+        UUID userId = extractUserIdFromToken(token);
+
+        // Verify user actually exists in db
+        if (!userRepository.existsById(userId)) {
+            throw new UnauthorizedException("User not found");
+        }
+
+        return userId;
     }
 
-    /**
-     * Extracts user ID from JWT token
-     * @param token The JWT token string
-     * @return The user ID (subject) from the token
-     * @throws UnauthorizedException if token cannot be parsed
-     */
     private UUID extractUserIdFromToken(String token) {
         try {
             SignedJWT jwt = SignedJWT.parse(token);

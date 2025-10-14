@@ -1,6 +1,6 @@
 package com.example.cube.service.impl;
 
-import com.example.cube.dto.request.CubeRequestDTO;
+import com.example.cube.dto.request.CreateCubeRequest;
 import com.example.cube.mapper.CubeMapper;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeMember;
@@ -35,16 +35,17 @@ public class CubeServiceImpl implements CubeService {
 
     @Override
     @Transactional  // - ensures both operations succeed or both fail
-    public Cube createCubeFromDTO(CubeRequestDTO cubeRequestDTO) {
+    public Cube createCubeFromDTO(CreateCubeRequest createCubeRequest) {
         // 1. Create the cube
-        Cube cube = cubeMapper.toEntity(cubeRequestDTO);
-        cube.setDuration(durationRepo.getReferenceById(cubeRequestDTO.getDurationId()));
+        Cube cube = cubeMapper.toEntity(createCubeRequest);
+        cube.setDuration(durationRepo.getReferenceById(createCubeRequest.getDurationId()));
+        cube.setCurrentCycle(0);
         cube.setRotationId(1);  // Set rotation system to random (1)
         
         // 2. Calculate total to be collected
-        BigDecimal totalToBeCollected = cubeRequestDTO.getAmountPerCycle()
-                .multiply(BigDecimal.valueOf(cubeRequestDTO.getNumberofmembers()))
-                .multiply(BigDecimal.valueOf(cubeRequestDTO.getNumberofmembers()));
+        BigDecimal totalToBeCollected = createCubeRequest.getAmountPerCycle()
+                .multiply(BigDecimal.valueOf(createCubeRequest.getNumberofmembers()))
+                .multiply(BigDecimal.valueOf(createCubeRequest.getNumberofmembers()));
         cube.setTotalToBeCollected(totalToBeCollected);
         
         Cube savedCube = cubeRepository.save(cube);
@@ -52,7 +53,7 @@ public class CubeServiceImpl implements CubeService {
         // 3. Add creator as admin member
         CubeMember creatorMember = new CubeMember();
         creatorMember.setCubeId(savedCube.getCubeId());
-        creatorMember.setUserId(cubeRequestDTO.getUser_id());
+        creatorMember.setUserId(createCubeRequest.getUser_id());
         creatorMember.setRoleId(1);  // 1 = Admin role
         cubeMemberRepository.save(creatorMember);
 

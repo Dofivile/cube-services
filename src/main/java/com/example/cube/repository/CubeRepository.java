@@ -2,7 +2,11 @@ package com.example.cube.repository;
 
 import com.example.cube.model.Cube;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -15,6 +19,7 @@ import java.util.UUID;
  */
 @Repository
 public interface CubeRepository extends JpaRepository<Cube, UUID> {
-    // You can later add custom queries like:
-    // List<Cube> findByUserId(UUID user_id);
+
+    @Query("SELECT c FROM Cube c WHERE c.statusId = 2 AND c.nextPayoutDate <= :now")
+    List<Cube> findCubesReadyForProcessing(Instant now);
 }
