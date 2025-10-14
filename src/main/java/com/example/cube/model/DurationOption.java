@@ -3,7 +3,7 @@ package com.example.cube.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "\"Duration\"", schema = "public")
+@Table(name = "duration", schema = "public")
 public class DurationOption {
 
     @Id

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "\"CubeMembers\"", schema = "public")
+@Table(name = "cube_members", schema = "public")
 public class CubeMember {
 
     // ========== Primary Key ==========
