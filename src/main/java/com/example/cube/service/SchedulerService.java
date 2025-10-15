@@ -29,7 +29,7 @@ public class SchedulerService {
      * Runs every 30 seconds to check for cubes ready to process
      * For testing with 1-minute cycles, 30 seconds gives quick response
      */
-    @Scheduled(fixedRate = 60000)  // 30 seconds in milliseconds
+    @Scheduled(fixedRate = 120000)  // 30 seconds in milliseconds
     public void processReadyCubes() {
         logger.info("Scheduler: Checking for cubes ready to process...");
 

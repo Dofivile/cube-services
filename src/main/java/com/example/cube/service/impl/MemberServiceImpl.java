@@ -32,12 +32,17 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public InviteMembersResponse inviteMembers(UUID cubeId, InviteMembersRequest request, UUID invitedBy) {
 
-        // Validate cube and permissions
-        validateCubeExists(cubeId);
+        // Validate cube exists and get cube info
+        Cube cube = getCube(cubeId);
+
+        // Validate permissions
         validateInviterPermission(cubeId, invitedBy);
 
+        // Validate capacity
+        validateCubeCapacity(cube, request.getUserIds().size());
+
         // Process invitations
-        Map<String, String> results = processInvitations(cubeId, request);
+        Map<String, String> results = processInvitations(cubeId, request, cube);
 
         // Build and return response
         return buildInviteResponse(cubeId, results);
@@ -46,12 +51,11 @@ public class MemberServiceImpl implements MemberService {
     /** ---------- Helper methods ---------- */
 
     /**
-     * Validate that cube exists
+     * Get cube and validate it exists
      */
-    private void validateCubeExists(UUID cubeId) {
-        if (!cubeRepository.existsById(cubeId)) {
-            throw new RuntimeException("Cube not found");
-        }
+    private Cube getCube(UUID cubeId) {
+        return cubeRepository.findById(cubeId)
+                .orElseThrow(() -> new RuntimeException("Cube not found"));
     }
 
     /**
@@ -65,15 +69,44 @@ public class MemberServiceImpl implements MemberService {
     }
 
     /**
-     * Process all invitation requests
-     * Returns a map of userId -> status (success, already_member)
+     * Validate that cube has capacity for new members
      */
-    private Map<String, String> processInvitations(UUID cubeId, InviteMembersRequest request) {
+    private void validateCubeCapacity(Cube cube, int newMembersCount) {
+        int maxCapacity = cube.getNumberofmembers();
+        long currentMemberCount = cubeMemberRepository.countByCubeId(cube.getCubeId());
+        long totalAfterInvite = currentMemberCount + newMembersCount;
+
+        if (totalAfterInvite > maxCapacity) {
+            throw new RuntimeException(
+                    String.format("Cube is full or will exceed capacity. Current: %d, Max: %d, Trying to add: %d",
+                            currentMemberCount, maxCapacity, newMembersCount)
+            );
+        }
+    }
+
+    /**
+     * Process all invitation requests
+     * Returns a map of userId -> status (success, already_member, cube_full)
+     */
+    private Map<String, String> processInvitations(UUID cubeId, InviteMembersRequest request, Cube cube) {
         Map<String, String> results = new HashMap<>();
+        int maxCapacity = cube.getNumberofmembers();
+        long currentCount = cubeMemberRepository.countByCubeId(cubeId);
 
         for (UUID userId : request.getUserIds()) {
+            // Check capacity before each add (in case of partial success)
+            if (currentCount >= maxCapacity) {
+                results.put(userId.toString(), "cube_full");
+                continue;
+            }
+
             String status = processSingleInvitation(cubeId, userId, request.getRoleId());
             results.put(userId.toString(), status);
+
+            // Increment count if member was successfully added
+            if ("success".equals(status)) {
+                currentCount++;
+            }
         }
 
         return results;

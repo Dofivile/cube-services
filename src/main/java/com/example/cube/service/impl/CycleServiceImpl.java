@@ -65,16 +65,11 @@ public class CycleServiceImpl implements CycleService {
             throw new RuntimeException("Cube not full yet: " + memberCount + "/" + cube.getNumberofmembers() + " members");
         }
 
-        // 4. Check if already started
-        if (cube.getCurrentCycle() != null && cube.getCurrentCycle() > 0) {
-            throw new RuntimeException("Cube already started");
-        }
-
         // 5. Check if all members have paid for cycle 1
         long paidMembers = paymentTransactionRepository
                 .countByCubeIdAndCycleNumberAndTypeIdAndStatusId(
                         cubeId,
-                        0,  // cycle 1
+                        1,  // cycle 1
                         1,  // contribution
                         2   // completed
                 );
@@ -85,7 +80,6 @@ public class CycleServiceImpl implements CycleService {
 
         // 6. Activate the cube
         cube.setStatusId(2);  // active
-        cube.setCurrentCycle(1);
         cube.setStartDate(Instant.now());
         cube.setNextPayoutDate(calculateNextPayoutDate(cube));
 

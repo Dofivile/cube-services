@@ -22,6 +22,7 @@ public class AuthenticationService {
     }
 
     public UUID validateAndExtractUserId(String authHeader) {
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new UnauthorizedException("Missing or invalid Authorization header");
         }

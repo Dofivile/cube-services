@@ -1,6 +1,8 @@
 package com.example.cube.controller;
 
+import com.example.cube.dto.request.CreateCubeRequest;
 import com.example.cube.dto.request.StartCubeRequest;
+import com.example.cube.dto.response.CreateCubeResponse;
 import com.example.cube.dto.response.CycleProcessDTO;
 import com.example.cube.dto.response.CycleStatusDTO;
 import com.example.cube.dto.response.StartCubeResponse;
@@ -36,13 +38,13 @@ public class CycleController {
      * POST /api/cubes/{cubeId}/start
      * Start a cube (transition from draft to pending_payment)
      */
+
     @PostMapping("/start")
-    public ResponseEntity<StartCubeResponse> startCube(
-            @Valid @RequestBody StartCubeRequest request,
-            @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<StartCubeResponse> startCube(@RequestHeader("Authorization") String authHeader,
+                                                       @RequestBody StartCubeRequest startCubeRequest) {
 
         UUID userId = authenticationService.validateAndExtractUserId(authHeader);
-        Cube cube = cycleService.startCube(request.getCubeId(), userId);
+        Cube cube = cycleService.startCube(startCubeRequest.getCubeId(), userId);
 
         // Use mapper to build response DTO
         StartCubeResponse response = cubeMapper.toStartCubeResponse(cube);

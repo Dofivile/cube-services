@@ -1,29 +1,29 @@
 package com.example.cube.dto.request;
 
 import jakarta.validation.constraints.NotNull;
+
 import java.util.UUID;
 
-/**
- * Request DTO for starting a cube
- */
 public class StartCubeRequest {
+    @NotNull
+    private UUID user_id;
 
-    @NotNull(message = "Cube ID is required")
+    @NotNull
     private UUID cubeId;
 
-    // Constructors
-    public StartCubeRequest() {}
-
-    public StartCubeRequest(UUID cubeId) {
-        this.cubeId = cubeId;
-    }
-
-    // Getter and Setter
-    public UUID getCubeId() {
-        return cubeId;
+    public void setUser_id(UUID user_id) {
+        this.user_id = user_id;
     }
 
     public void setCubeId(UUID cubeId) {
         this.cubeId = cubeId;
+    }
+
+    public UUID getCubeId() {
+        return cubeId;
+    }
+
+    public UUID getUser_id() {
+        return user_id;
     }
 }

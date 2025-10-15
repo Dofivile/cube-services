@@ -40,7 +40,7 @@ public class CubeServiceImpl implements CubeService {
         // 1. Create the cube
         Cube cube = cubeMapper.toEntity(createCubeRequest);
         cube.setDuration(durationRepo.getReferenceById(createCubeRequest.getDurationId()));
-        cube.setCurrentCycle(0);
+        cube.setCurrentCycle(1);
         cube.setRotationId(1);  // Set rotation system to random (1)
         
         // 2. Calculate total to be collected
