@@ -1,8 +1,10 @@
 package com.example.cube.controller;
 
 import com.example.cube.dto.request.CreateCubeRequest;
+import com.example.cube.dto.request.GetCubeRequest;
 import com.example.cube.dto.request.GetUserCubesRequest;
 import com.example.cube.dto.response.CreateCubeResponse;
+import com.example.cube.dto.response.GetCubeResponse;
 import com.example.cube.dto.response.GetUserCubesResponse;
 import com.example.cube.mapper.CubeMapper;
 import com.example.cube.model.Cube;
@@ -59,6 +61,23 @@ public class CubeController {
 
         // Build response
         GetUserCubesResponse response = new GetUserCubesResponse(request.getUser_id(), cubeIds);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/get")
+    public ResponseEntity<GetCubeResponse> getCube(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody GetCubeRequest request) {
+
+        // Validate auth token
+        authenticationService.validateAndExtractUserId(authHeader);
+
+        // Get cube by ID
+        Cube cube = cubeService.getCubeById(request.getCubeId());
+
+        // Map to response
+        GetCubeResponse response = cubeMapper.toGetCubeResponse(cube);
 
         return ResponseEntity.ok(response);
     }

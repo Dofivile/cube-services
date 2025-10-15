@@ -2,6 +2,7 @@ package com.example.cube.mapper;
 
 import com.example.cube.dto.request.CreateCubeRequest;
 import com.example.cube.dto.response.CreateCubeResponse;
+import com.example.cube.dto.response.GetCubeResponse;
 import com.example.cube.dto.response.StartCubeResponse;
 import com.example.cube.model.Cube;
 import com.example.cube.model.DurationOption;
@@ -57,6 +58,23 @@ public class CubeMapper {
     public StartCubeResponse toStartCubeResponse(Cube cube) {
         return new StartCubeResponse(cube.getCubeId(), cube.getStatusId(), cube.getCurrentCycle(),
             cube.getStartDate(), cube.getEndDate(), cube.getTotalToBeCollected());
+    }
+
+    // Entity → GetCubeResponse
+    public GetCubeResponse toGetCubeResponse(Cube cube) {
+        GetCubeResponse response = new GetCubeResponse();
+        response.setCubeId(cube.getCubeId());
+        response.setUserId(cube.getUser_id());  // ← ADDED: Creator ID
+        response.setName(cube.getName());
+        response.setDescription(cube.getDescription());
+        response.setAmountPerCycle(cube.getAmountPerCycle());
+        response.setNextPayoutDate(cube.getNextPayoutDate());
+        response.setCurrentCycle(cube.getCurrentCycle());
+        response.setCurrency(cube.getCurrency());
+        response.setNumberOfMembers(cube.getNumberofmembers());
+        response.setStartDate(cube.getStartDate());
+        response.setEndDate(cube.getEndDate());
+        return response;
     }
 
 }
