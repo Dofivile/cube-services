@@ -1,7 +1,9 @@
 package com.example.cube.controller;
 
 import com.example.cube.dto.request.CreateCubeRequest;
+import com.example.cube.dto.request.GetUserCubesRequest;
 import com.example.cube.dto.response.CreateCubeResponse;
+import com.example.cube.dto.response.GetUserCubesResponse;
 import com.example.cube.mapper.CubeMapper;
 import com.example.cube.model.Cube;
 import com.example.cube.security.AuthenticationService;
@@ -10,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Controller for Cube-related endpoints.
@@ -39,5 +44,22 @@ public class CubeController {
         Cube savedCube = cubeService.createCubeFromDTO(createCubeRequest);
         CreateCubeResponse response = cubeMapper.toResponse(savedCube);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/listCubes")
+    public ResponseEntity<GetUserCubesResponse> getUserCubes(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody GetUserCubesRequest request) {
+
+        // Validate auth token
+        authenticationService.validateAndExtractUserId(authHeader);
+
+        // Get cube IDs for the user
+        List<UUID> cubeIds = cubeService.getUserCubeIds(request.getUser_id());
+
+        // Build response
+        GetUserCubesResponse response = new GetUserCubesResponse(request.getUser_id(), cubeIds);
+
+        return ResponseEntity.ok(response);
     }
 }

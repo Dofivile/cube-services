@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class CubeServiceImpl implements CubeService {
@@ -58,6 +59,14 @@ public class CubeServiceImpl implements CubeService {
         cubeMemberRepository.save(creatorMember);
 
         return savedCube;
+    }
+
+    @Override
+    public List<UUID> getUserCubeIds(UUID userId) {
+        List<CubeMember> membershipList = cubeMemberRepository.findByUserId(userId);
+        return membershipList.stream()
+                .map(CubeMember::getCubeId)
+                .collect(Collectors.toList());
     }
 
     @Override

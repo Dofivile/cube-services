@@ -21,4 +21,6 @@ public interface CubeMemberRepository extends JpaRepository<CubeMember, UUID> {
     boolean existsByCubeIdAndUserIdAndRoleId(UUID cubeId, UUID userId, Integer roleId);
 
     Optional<CubeMember> findByCubeIdAndUserId(UUID cubeId, UUID userId);
+
+    List<CubeMember> findByUserId(UUID userId);
 }

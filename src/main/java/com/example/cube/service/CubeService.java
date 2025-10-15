@@ -14,6 +14,9 @@ public interface CubeService {
     // Create a new Cube from DTO (used by frontend requests)
     Cube createCubeFromDTO(CreateCubeRequest createCubeRequest);
 
+    // Get all cube IDs for a user
+    List<UUID> getUserCubeIds(UUID userId);
+
     // Retrieve all Cubes
     List<Cube> getAllCubes();
 
@@ -22,5 +25,6 @@ public interface CubeService {
 
     // Delete a Cube
     void deleteCube(UUID cubeId);
+
 
 }
