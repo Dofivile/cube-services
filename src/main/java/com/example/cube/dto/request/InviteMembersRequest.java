@@ -8,10 +8,10 @@ import java.util.UUID;
 public class InviteMembersRequest {
 
     @NotNull(message = "Cube ID is required")
-    private UUID cubeId;  // ← ADD THIS
+    private UUID cubeId;
 
     @NotEmpty(message = "Must invite at least one member")
-    private List<UUID> userIds;
+    private List<String> emails;
 
     @NotNull(message = "Role is required")
     private Integer roleId;
@@ -25,12 +25,12 @@ public class InviteMembersRequest {
         this.cubeId = cubeId;
     }
 
-    public List<UUID> getUserIds() {
-        return userIds;
+    public List<String> getEmails() {
+        return emails;
     }
 
-    public void setUserIds(List<UUID> userIds) {
-        this.userIds = userIds;
+    public void setEmails(List<String> emails) {
+        this.emails = emails;
     }
 
     public Integer getRoleId() {

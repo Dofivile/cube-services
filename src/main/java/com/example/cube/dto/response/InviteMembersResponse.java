@@ -6,7 +6,8 @@ import java.util.UUID;
 public class InviteMembersResponse {
 
     private UUID cubeId;
-    private Map<String, String> results;  // userId -> status
+    private Map<String, String> results;  // email -> status
+    private String message;
 
     // Getters and Setters
     public UUID getCubeId() {
@@ -23,5 +24,13 @@ public class InviteMembersResponse {
 
     public void setResults(Map<String, String> results) {
         this.results = results;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

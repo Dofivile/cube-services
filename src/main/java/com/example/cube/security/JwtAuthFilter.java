@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
-//@Component
+@Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    //@Autowired
+    @Autowired
     private TokenValidator tokenValidator;
 
     @Override
@@ -41,7 +41,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         return path.startsWith("/api/auth/")
                 || path.startsWith("/api/cubes/")
-                || path.startsWith("/api/payments/");
-    }
+                || path.startsWith("/api/payments/")
+                || path.startsWith("/api/stripe/webhook");
+    };
 
 }

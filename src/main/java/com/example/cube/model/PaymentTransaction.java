@@ -41,8 +41,19 @@ public class PaymentTransaction {
     @Column(name = "processed_at")
     private LocalDateTime processedAt;
 
+    @Column(name = "stripe_payment_intent_id", unique = true)
+    private String stripePaymentIntentId;
+
 
     // Getters and Setters
+
+    public String getStripePaymentIntentId() {
+        return stripePaymentIntentId;
+    }
+
+    public void setStripePaymentIntentId(String stripePaymentIntentId) {
+        this.stripePaymentIntentId = stripePaymentIntentId;
+    }
     public UUID getPaymentId() {
         return paymentId;
     }

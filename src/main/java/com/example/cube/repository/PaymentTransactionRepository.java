@@ -40,4 +40,6 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
             Integer cycleNumber,
             Integer typeId
     );
+
+    boolean existsByStripePaymentIntentId(String stripePaymentIntentId);
 }

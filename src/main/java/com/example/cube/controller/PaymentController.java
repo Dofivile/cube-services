@@ -1,33 +1,39 @@
 package com.example.cube.controller;
 
-import com.example.cube.dto.request.PaymentRequestDTO;
-import com.example.cube.dto.response.PaymentResponse;
-import com.example.cube.service.PaymentService;
-import jakarta.validation.Valid;
+import com.example.cube.dto.request.CreatePaymentIntentRequest;
+import com.example.cube.dto.response.PaymentIntentResponse;
+import com.example.cube.security.AuthenticationService;
+import com.example.cube.service.StripePaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
 
-    private final PaymentService paymentService;
+    @Autowired
+    private StripePaymentService stripePaymentService;
 
     @Autowired
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
+    private AuthenticationService authenticationService;
 
-    /**
-     * POST /api/payments
-     * Process a member's payment for a cycle
-     */
-    @PostMapping
-    public ResponseEntity<PaymentResponse> processPayment(
-            @Valid @RequestBody PaymentRequestDTO request) {
+    @PostMapping("/create-payment-intent")
+    public ResponseEntity<PaymentIntentResponse> createPaymentIntent(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody CreatePaymentIntentRequest request) {
 
-        PaymentResponse response = paymentService.processPayment(request);
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+
+        PaymentIntentResponse response = stripePaymentService.createPaymentIntent(
+                userId,
+                request.getCubeId(),
+                request.getMemberId(),
+                request.getCycleNumber()
+        );
+
         return ResponseEntity.ok(response);
     }
 }
