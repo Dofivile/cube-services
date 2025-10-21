@@ -50,7 +50,7 @@ public class StripeConnectServiceImpl implements StripeConnectService {
         try {
             // Create Custom Connected Account for receiving payouts
             AccountCreateParams params = AccountCreateParams.builder()
-                    .setType(AccountCreateParams.Type.CUSTOM)
+                    .setType(AccountCreateParams.Type.EXPRESS)
                     .setCountry("US")
                     .setCapabilities(
                             AccountCreateParams.Capabilities.builder()
@@ -62,6 +62,11 @@ public class StripeConnectServiceImpl implements StripeConnectService {
                                     .build()
                     )
                     .setBusinessType(AccountCreateParams.BusinessType.INDIVIDUAL)
+                    .setBusinessProfile(
+                            AccountCreateParams.BusinessProfile.builder()
+                                    .setProductDescription("Cube rotating savings participant")
+                                    .build()
+                    )
                     .putMetadata("user_id", userId.toString())
                     .build();
 
@@ -96,17 +101,14 @@ public class StripeConnectServiceImpl implements StripeConnectService {
 
             UserDetails user = userOpt.get();
 
-            // Check if onboarding is complete
-            // Account is ready when charges_enabled, payouts_enabled, and details_submitted are all true
-            boolean isComplete = Boolean.TRUE.equals(account.getChargesEnabled()) &&
-                    Boolean.TRUE.equals(account.getPayoutsEnabled()) &&
-                    Boolean.TRUE.equals(account.getDetailsSubmitted());
+            // Check if payouts are enabled (only thing we care about)
+            Boolean payoutsEnabled = account.getPayoutsEnabled();
 
-            user.setStripeOnboardingComplete(isComplete);
+            // Update payout status
+            user.setStripePayoutsEnabled(payoutsEnabled);
             userDetailsRepository.save(user);
 
-            System.out.println("✅ Updated onboarding status for user " + user.getUser_id() +
-                    ": complete=" + isComplete);
+            System.out.println("✅ Updated payout status for user " + user.getUser_id() + ": payoutsEnabled=" + payoutsEnabled);
 
         } catch (StripeException e) {
             System.err.println("❌ Failed to retrieve account status: " + e.getMessage());

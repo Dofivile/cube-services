@@ -46,23 +46,4 @@ public class PayoutController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Check onboarding status
-     */
-    @GetMapping("/onboarding-status")
-    public ResponseEntity<Map<String, Object>> getOnboardingStatus(
-            @RequestHeader("Authorization") String authHeader) {
-
-        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
-
-        UserDetails user = userDetailsRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("hasAccount", user.getStripeAccountId() != null);
-        response.put("onboardingComplete", Boolean.TRUE.equals(user.getStripeOnboardingComplete()));
-        response.put("stripeAccountId", user.getStripeAccountId());
-
-        return ResponseEntity.ok(response);
-    }
 }

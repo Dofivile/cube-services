@@ -42,13 +42,13 @@ public class CubeServiceImpl implements CubeService {
         cube.setDuration(durationRepo.getReferenceById(createCubeRequest.getDurationId()));
         cube.setCurrentCycle(1);
         cube.setRotationId(1);  // Set rotation system to random (1)
-        
+
         // 2. Calculate total to be collected
         BigDecimal totalToBeCollected = createCubeRequest.getAmountPerCycle()
                 .multiply(BigDecimal.valueOf(createCubeRequest.getNumberofmembers()))
                 .multiply(BigDecimal.valueOf(createCubeRequest.getNumberofmembers()));
         cube.setTotalToBeCollected(totalToBeCollected);
-        
+
         Cube savedCube = cubeRepository.save(cube);
 
         // 3. Add creator as admin member
