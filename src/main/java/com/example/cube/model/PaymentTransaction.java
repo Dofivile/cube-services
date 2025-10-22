@@ -45,7 +45,39 @@ public class PaymentTransaction {
     private String stripePaymentIntentId;
 
 
-    // Getters and Setters
+    @Column(name = "stripe_transfer_id", unique = true)
+    private String stripeTransferId;
+
+    @Column(name = "failure_reason")
+    private String failureReason;
+
+    @Column(name = "stripe_fee")
+    private BigDecimal stripeFee = BigDecimal.ZERO;
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public String getStripeTransferId() {
+        return stripeTransferId;
+    }
+
+    public BigDecimal getStripeFee() {
+        return stripeFee;
+    }
+
+    public void setStripeTransferId(String stripeTransferId) {
+        this.stripeTransferId = stripeTransferId;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
+    }
+
+    public void setStripeFee(BigDecimal stripeFee) {
+        this.stripeFee = stripeFee;
+    }
+// Getters and Setters
 
     public String getStripePaymentIntentId() {
         return stripePaymentIntentId;
@@ -133,4 +165,5 @@ public class PaymentTransaction {
     public void setProcessedAt(LocalDateTime processedAt) {
         this.processedAt = processedAt;
     }
+
 }

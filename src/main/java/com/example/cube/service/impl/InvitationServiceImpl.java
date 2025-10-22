@@ -1,12 +1,16 @@
 package com.example.cube.service.impl;
 
+import com.example.cube.dto.request.AddMembersDirectRequest;
 import com.example.cube.dto.request.InviteMembersRequest;
+import com.example.cube.dto.response.AddMembersDirectResponse;
 import com.example.cube.dto.response.InviteMembersResponse;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeInvitation;
+import com.example.cube.model.CubeMember;
 import com.example.cube.repository.CubeInvitationRepository;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.repository.CubeRepository;
+import com.example.cube.repository.UserDetailsRepository;
 import com.example.cube.service.EmailService;
 import com.example.cube.service.InvitationService;
 import com.example.cube.service.supabass.SupabaseUserLookupService;
@@ -28,18 +32,20 @@ public class InvitationServiceImpl implements InvitationService {
     private final CubeRepository cubeRepository;
     private final SupabaseUserLookupService userLookupService;
     private final EmailService emailService;
+    private final UserDetailsRepository userDetailsRepository;
 
     @Autowired
     public InvitationServiceImpl(CubeInvitationRepository invitationRepository,
                                  CubeMemberRepository cubeMemberRepository,
                                  CubeRepository cubeRepository,
                                  SupabaseUserLookupService userLookupService,
-                                 EmailService emailService) {
+                                 EmailService emailService, UserDetailsRepository userDetailsRepository) {
         this.invitationRepository = invitationRepository;
         this.cubeMemberRepository = cubeMemberRepository;
         this.cubeRepository = cubeRepository;
         this.userLookupService = userLookupService;
         this.emailService = emailService;
+        this.userDetailsRepository = userDetailsRepository;
     }
 
     @Override
@@ -70,6 +76,74 @@ public class InvitationServiceImpl implements InvitationService {
                 .filter(s -> "invited".equals(s))
                 .count();
         response.setMessage(String.format("Sent %d invitation(s)", successCount));
+
+        return response;
+    }
+
+
+    @Override
+    @Transactional
+    public AddMembersDirectResponse addMembersDirect(UUID cubeId, AddMembersDirectRequest request, UUID addedBy) {
+
+        // 1. Validate cube exists
+        Cube cube = cubeRepository.findById(cubeId)
+                .orElseThrow(() -> new RuntimeException("Cube not found"));
+
+        // 2. Validate user has permission
+        if (!cubeMemberRepository.existsByCubeIdAndUserId(cubeId, addedBy)) {
+            throw new RuntimeException("You don't have permission to add members to this cube");
+        }
+
+        // 3. Validate capacity
+        int maxCapacity = cube.getNumberofmembers();
+        long currentMemberCount = cubeMemberRepository.countByCubeId(cubeId);
+        long totalAfterAdd = currentMemberCount + request.getUserIds().size();
+
+        if (totalAfterAdd > maxCapacity) {
+            throw new RuntimeException(
+                    String.format("Cube capacity exceeded. Current: %d, Max: %d, Trying to add: %d",
+                            currentMemberCount, maxCapacity, request.getUserIds().size())
+            );
+        }
+
+        // 4. Add each user
+        Map<String, String> results = new HashMap<>();
+
+        for (UUID userId : request.getUserIds()) {
+            try {
+                // Check if already a member
+                if (cubeMemberRepository.existsByCubeIdAndUserId(cubeId, userId)) {
+                    results.put(userId.toString(), "already_member");
+                    continue;
+                }
+
+                // Check if user exists
+                if (!userDetailsRepository.existsById(userId)) {
+                    results.put(userId.toString(), "user_not_found");
+                    continue;
+                }
+
+                // Add member directly
+                CubeMember member = new CubeMember();
+                member.setCubeId(cubeId);
+                member.setUserId(userId);
+                member.setRoleId(request.getRoleId());
+                cubeMemberRepository.save(member);
+
+                results.put(userId.toString(), "added");
+
+            } catch (Exception e) {
+                results.put(userId.toString(), "error: " + e.getMessage());
+            }
+        }
+
+        // 5. Build response
+        long successCount = results.values().stream().filter(s -> "added".equals(s)).count();
+
+        AddMembersDirectResponse response = new AddMembersDirectResponse();
+        response.setCubeId(cubeId);
+        response.setResults(results);
+        response.setMessage(String.format("Added %d member(s) directly", successCount));
 
         return response;
     }
@@ -117,7 +191,7 @@ public class InvitationServiceImpl implements InvitationService {
         }
 
         // 2. Check if pending invitation already exists
-        if (invitationRepository.existsByEmailAndCubeIdAndStatus(email, cubeId, "pending")) {
+        if (invitationRepository.existsByEmailAndCubeIdAndStatusId(email, cubeId, 1)) {
             return "pending_invitation_exists";
         }
 
@@ -157,4 +231,6 @@ public class InvitationServiceImpl implements InvitationService {
         // Generate a secure random token
         return UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
     }
+
+
 }

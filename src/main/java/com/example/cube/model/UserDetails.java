@@ -28,9 +28,16 @@ public class UserDetails {
     @Column(name = "stripe_account_id", unique = true)
     private String stripeAccountId;
 
-    @Column(name = "stripe_onboarding_complete")
-    private Boolean stripeOnboardingComplete = false;
+    @Column(name = "stripe_payouts_enabled")
+    private Boolean stripePayoutsEnabled;
 
+    public void setStripePayoutsEnabled(Boolean stripePayoutsEnabled) {
+        this.stripePayoutsEnabled = stripePayoutsEnabled;
+    }
+
+    public Boolean getStripePayoutsEnabled() {
+        return stripePayoutsEnabled;
+    }
 // Add getters and setters at the end:
 
     public String getStripeAccountId() {
@@ -39,14 +46,6 @@ public class UserDetails {
 
     public void setStripeAccountId(String stripeAccountId) {
         this.stripeAccountId = stripeAccountId;
-    }
-
-    public Boolean getStripeOnboardingComplete() {
-        return stripeOnboardingComplete;
-    }
-
-    public void setStripeOnboardingComplete(Boolean stripeOnboardingComplete) {
-        this.stripeOnboardingComplete = stripeOnboardingComplete;
     }
 
     // Getters and Setters

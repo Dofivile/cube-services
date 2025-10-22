@@ -22,10 +22,7 @@ public class StripeWebhookController {
     private StripePaymentService stripePaymentService;
 
     @PostMapping("/webhook")
-    public ResponseEntity<String> handleWebhook(
-            @RequestBody String payload,
-            @RequestHeader("Stripe-Signature") String sigHeader) {
-
+    public ResponseEntity<String> handleWebhook(@RequestBody String payload,  @RequestHeader("Stripe-Signature") String sigHeader) {
         Event event;
 
         try {
@@ -55,11 +52,25 @@ public class StripeWebhookController {
 
     private void handlePaymentIntentSucceeded(Event event) {
         try {
-            PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
-                    .getObject()
-                    .orElseThrow(() -> new RuntimeException("Failed to parse payment intent"));
+            System.out.println("🔍 Processing payment_intent.succeeded...");
 
-            stripePaymentService.handlePaymentIntentSucceeded(paymentIntent.getId());
+            // Access the stripe object directly from event data
+            com.stripe.model.StripeObject stripeObject = event.getData().getObject();
+
+            // Cast to PaymentIntent
+            PaymentIntent paymentIntent = (PaymentIntent) stripeObject;
+
+            String paymentIntentId = paymentIntent.getId();
+            String status = paymentIntent.getStatus();
+            Long amount = paymentIntent.getAmount();
+
+            System.out.println("  Payment Intent ID: " + paymentIntentId);
+            System.out.println("  Status: " + status);
+            System.out.println("  Amount: " + amount);
+
+            stripePaymentService.handlePaymentIntentSucceeded(paymentIntentId);
+
+            System.out.println("✅ Payment intent processed successfully");
 
         } catch (Exception e) {
             System.err.println("❌ Error handling payment_intent.succeeded: " + e.getMessage());
