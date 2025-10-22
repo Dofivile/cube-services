@@ -9,5 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface UserDetailsRepository extends JpaRepository<UserDetails, UUID> {
+    boolean existsById(UUID id);
     Optional<UserDetails> findByStripeAccountId(String stripeAccountId);
 }

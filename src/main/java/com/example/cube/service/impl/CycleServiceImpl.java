@@ -11,6 +11,7 @@ import com.example.cube.repository.CubeRepository;
 import com.example.cube.repository.PaymentTransactionRepository;
 import com.example.cube.service.BankService;
 import com.example.cube.service.CycleService;
+import com.example.cube.service.PayoutService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,16 +34,19 @@ public class CycleServiceImpl implements CycleService {
     private final CubeMemberRepository cubeMemberRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final BankService bankService;
+    private final PayoutService payoutService;
 
     @Autowired
     public CycleServiceImpl(CubeRepository cubeRepository,
                             CubeMemberRepository cubeMemberRepository,
                             PaymentTransactionRepository paymentTransactionRepository,
-                            BankService bankService) {
+                            BankService bankService,
+                            PayoutService payoutService) {
         this.cubeRepository = cubeRepository;
         this.cubeMemberRepository = cubeMemberRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.bankService = bankService;
+        this.payoutService = payoutService;
     }
 
     @Override

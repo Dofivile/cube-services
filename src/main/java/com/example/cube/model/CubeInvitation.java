@@ -31,8 +31,8 @@ public class CubeInvitation {
     @Column(name = "role_id", nullable = false)
     private Integer roleId;
 
-    @Column(name = "status", nullable = false)
-    private String status = "pending";
+    @Column(name = "status_id", nullable = false)
+    private Integer statusId;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -65,8 +65,13 @@ public class CubeInvitation {
     public Integer getRoleId() { return roleId; }
     public void setRoleId(Integer roleId) { this.roleId = roleId; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public Integer getStatusId() {
+        return statusId;
+    }
+
+    public void setStatusId(Integer statusId) {
+        this.statusId = statusId;
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
