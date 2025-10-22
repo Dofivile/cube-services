@@ -9,6 +9,7 @@ import com.example.cube.repository.UserDetailsRepository;
 import com.example.cube.service.PayoutService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Account;
 import com.stripe.model.Transfer;
 import com.stripe.param.TransferCreateParams;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,22 +124,29 @@ public class PayoutServiceImpl implements PayoutService {
     @Override
     public boolean canUserReceivePayouts(UUID userId) {
         UserDetails user = userDetailsRepository.findById(userId).orElse(null);
-
-        if (user == null) {
+        if (user == null || user.getStripeAccountId() == null) {
             return false;
         }
 
-        boolean canReceive = user.getStripeAccountId() != null
-                && Boolean.TRUE.equals(user.getStripePayoutsEnabled());
+        Stripe.apiKey = stripeApiKey;
+        try {
+            Account acct = Account.retrieve(user.getStripeAccountId());
+            boolean payoutsEnabled = acct.getPayoutsEnabled();
+            boolean hasNoPendingRequirements = acct.getRequirements().getCurrentlyDue().isEmpty();
 
-        if (!canReceive) {
-            System.out.println("⚠️ User cannot receive payouts:");
-            System.out.println("   Has Stripe Account: " + (user.getStripeAccountId() != null));
-            System.out.println("   Payouts Enabled: " + user.getStripePayoutsEnabled());
+            if (!payoutsEnabled || !hasNoPendingRequirements) {
+                System.out.println("⚠️ Stripe account not ready for payouts:");
+                System.out.println("   payoutsEnabled=" + payoutsEnabled);
+                System.out.println("   pending=" + acct.getRequirements().getCurrentlyDue());
+                return false;
+            }
+            return true;
+        } catch (StripeException e) {
+            System.err.println("❌ Error checking account payout status: " + e.getMessage());
+            return false;
         }
-
-        return canReceive;
     }
+
 
     // ========== Helper Methods ==========
 
