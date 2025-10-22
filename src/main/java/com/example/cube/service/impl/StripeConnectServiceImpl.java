@@ -48,12 +48,17 @@ public class StripeConnectServiceImpl implements StripeConnectService {
         }
 
         try {
-            // Create Custom Connected Account for receiving payouts
+            // Create Express Connected Account for receiving payouts
             AccountCreateParams params = AccountCreateParams.builder()
                     .setType(AccountCreateParams.Type.EXPRESS)
                     .setCountry("US")
                     .setCapabilities(
                             AccountCreateParams.Capabilities.builder()
+                                    .setCardPayments(
+                                            AccountCreateParams.Capabilities.CardPayments.builder()
+                                                    .setRequested(true)
+                                                    .build()
+                                    )
                                     .setTransfers(
                                             AccountCreateParams.Capabilities.Transfers.builder()
                                                     .setRequested(true)
@@ -64,7 +69,16 @@ public class StripeConnectServiceImpl implements StripeConnectService {
                     .setBusinessType(AccountCreateParams.BusinessType.INDIVIDUAL)
                     .setBusinessProfile(
                             AccountCreateParams.BusinessProfile.builder()
+                                    .setMcc("5734") // Computer software stores (valid code)
+                                    .setUrl("https://cubeapp.vercel.app")
                                     .setProductDescription("Cube rotating savings participant")
+                                    .build()
+                    )
+                    .setIndividual(
+                            AccountCreateParams.Individual.builder()
+                                    .setEmail("rendasha@terpmail.umd.edu")
+                                    .setFirstName("egal")
+                                    .setLastName("endashaw")
                                     .build()
                     )
                     .putMetadata("user_id", userId.toString())
