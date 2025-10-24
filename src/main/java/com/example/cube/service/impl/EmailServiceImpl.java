@@ -18,7 +18,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${resend.api.key}")
     private String resendApiKey;
 
-    @Value("${resend.from.email:onboarding@resend.dev}")
+    @Value("${resend.from.email:no-reply@cubemoney.io}")
     private String fromEmail;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -35,10 +35,12 @@ public class EmailServiceImpl implements EmailService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + resendApiKey);
+        final String verifiedSender = fromEmail != null ? fromEmail : "no-reply@cubemoney.io";
+        headers.set("From", verifiedSender);
 
         // Build email body
         JSONObject emailBody = new JSONObject();
-        emailBody.put("from", fromEmail);
+        emailBody.put("from", verifiedSender);
         emailBody.put("to", email);
         emailBody.put("subject", "You've been invited to join " + cubeName);
         emailBody.put("html", buildEmailHtml(invitationLink, cubeName));
