@@ -199,6 +199,7 @@ public class InvitationServiceImpl implements InvitationService {
         CubeInvitation invitation = new CubeInvitation();
         invitation.setCubeId(cubeId);
         invitation.setEmail(email);
+        invitation.setStatusId(1);
         invitation.setInvitedBy(invitedBy);
         invitation.setRoleId(roleId);
 
