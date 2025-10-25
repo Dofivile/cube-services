@@ -45,8 +45,6 @@ public class Cube {
     @Column(name = "total_amount_collected")
     private BigDecimal totalAmountCollected = BigDecimal.ZERO;
 
-    @Column(name = "total_to_be_collected")
-    private BigDecimal totalToBeCollected;
 
     @Column(name = "status_id", nullable = false)
     private Integer statusId = 1;  // Default: draft
@@ -115,9 +113,7 @@ public class Cube {
 
     public void setTotalAmountCollected(BigDecimal totalAmountCollected) { this.totalAmountCollected = totalAmountCollected;}
 
-    public BigDecimal getTotalToBeCollected() { return totalToBeCollected; }
-
-    public void setTotalToBeCollected(BigDecimal totalToBeCollected) { this.totalToBeCollected = totalToBeCollected; }
+    // total_to_be_collected removed from schema; compute on demand where needed
 
     public Integer getStatusId() { return statusId; }
 

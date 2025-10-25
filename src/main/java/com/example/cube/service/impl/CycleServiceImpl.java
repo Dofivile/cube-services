@@ -84,7 +84,10 @@ public class CycleServiceImpl implements CycleService {
 
         // 6. Activate the cube
         cube.setStatusId(2);  // active
-        cube.setStartDate(Instant.now());
+        // Only set startDate if not already provided
+        if (cube.getStartDate() == null) {
+            cube.setStartDate(Instant.now());
+        }
         cube.setNextPayoutDate(calculateNextPayoutDate(cube));
 
         return cubeRepository.save(cube);
@@ -96,6 +99,12 @@ public class CycleServiceImpl implements CycleService {
 
         Cube cube = cubeRepository.findById(cubeId)
                 .orElseThrow(() -> new RuntimeException("Cube not found"));
+
+        // Time-gate: only process when payout time has been reached
+        Instant now = Instant.now();
+        if (cube.getNextPayoutDate() != null && now.isBefore(cube.getNextPayoutDate())) {
+            throw new RuntimeException("Not time for payout yet. Next payout at: " + cube.getNextPayoutDate());
+        }
 
         int currentCycle = cube.getCurrentCycle();
 
@@ -195,12 +204,16 @@ public class CycleServiceImpl implements CycleService {
                 .filter(m -> !m.getHasReceivedPayout())
                 .count();
 
+        // Compute total to be collected on the fly: amount_per_cycle * members * members
+        BigDecimal totalToBeCollected = cube.getAmountPerCycle()
+                .multiply(BigDecimal.valueOf(cube.getNumberofmembers()))
+                .multiply(BigDecimal.valueOf(cube.getNumberofmembers()));
+
         // Calculate progress percentage
         BigDecimal progressPercentage = BigDecimal.ZERO;
-        if (cube.getTotalToBeCollected() != null &&
-                cube.getTotalToBeCollected().compareTo(BigDecimal.ZERO) > 0) {
+        if (totalToBeCollected.compareTo(BigDecimal.ZERO) > 0) {
             progressPercentage = cube.getTotalAmountCollected()
-                    .divide(cube.getTotalToBeCollected(), 4, java.math.RoundingMode.HALF_UP)
+                    .divide(totalToBeCollected, 4, java.math.RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100));
         }
 
@@ -209,7 +222,7 @@ public class CycleServiceImpl implements CycleService {
         response.setCubeId(cubeId);
         response.setCurrentCycle(cube.getCurrentCycle());
         response.setTotalCycles(cube.getNumberofmembers());
-        response.setTotalToBeCollected(cube.getTotalToBeCollected());
+        response.setTotalToBeCollected(totalToBeCollected);
         response.setTotalAmountCollected(cube.getTotalAmountCollected());
         response.setProgressPercentage(progressPercentage);
         response.setNextPayoutDate(cube.getNextPayoutDate());
@@ -320,8 +333,19 @@ public class CycleServiceImpl implements CycleService {
         if (cube.getDuration() == null || cube.getStartDate() == null) {
             return null;
         }
-        int minutesToAdd = cube.getDuration().getDurationDays() * cube.getCurrentCycle();
-        return cube.getStartDate().plus(minutesToAdd, ChronoUnit.MINUTES);
+
+        String durationName = cube.getDuration().getDurationName();
+        int durationDays = cube.getDuration().getDurationDays();
+        int current = cube.getCurrentCycle() != null ? cube.getCurrentCycle() : 1;
+
+        // Testing shortcut: if duration name indicates 3-minute cycles, advance in minutes
+        if (durationName != null && durationName.equalsIgnoreCase("MINUTES")) {
+            int minutes = 3 * current;
+            return cube.getStartDate().plus(minutes, ChronoUnit.MINUTES);
+        }
+
+        long days = (long) durationDays * current;
+        return cube.getStartDate().plus(days, ChronoUnit.DAYS);
     }
 
     // Helper method to check if all members have paid for a cycle
