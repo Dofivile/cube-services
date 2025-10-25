@@ -60,11 +60,10 @@ public class CubeMapper {
             cube.getStartDate(), cube.getEndDate(), cube.getTotalToBeCollected());
     }
 
-    // Entity → GetCubeResponse
     public GetCubeResponse toGetCubeResponse(Cube cube) {
         GetCubeResponse response = new GetCubeResponse();
         response.setCubeId(cube.getCubeId());
-        response.setUserId(cube.getUser_id());  // ← ADDED: Creator ID
+        response.setUserId(cube.getUser_id());
         response.setName(cube.getName());
         response.setDescription(cube.getDescription());
         response.setAmountPerCycle(cube.getAmountPerCycle());
@@ -74,6 +73,13 @@ public class CubeMapper {
         response.setNumberOfMembers(cube.getNumberofmembers());
         response.setStartDate(cube.getStartDate());
         response.setEndDate(cube.getEndDate());
+
+        // Add contribution frequency from duration
+        if (cube.getDuration() != null) {
+            response.setContributionFrequency(cube.getDuration().getDurationName());
+            response.setContributionFrequencyDays(cube.getDuration().getDurationDays());
+        }
+
         return response;
     }
 

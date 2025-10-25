@@ -1,7 +1,13 @@
 package com.example.cube.controller;
 
 import com.example.cube.dto.request.InviteMembersRequest;
+import com.example.cube.dto.request.VerifyAdminRequest;
+import com.example.cube.dto.response.GetCubeMembersResponse;
 import com.example.cube.dto.response.InviteMembersResponse;
+import com.example.cube.dto.response.VerifyAdminResponse;
+import com.example.cube.model.Cube;
+import com.example.cube.model.CubeMember;
+import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.security.AuthenticationService;
 import com.example.cube.service.InvitationService;
 import jakarta.validation.Valid;
@@ -9,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -17,12 +25,14 @@ public class MemberController {
 
     private final InvitationService invitationService;  // ← Changed from MemberService
     private final AuthenticationService authenticationService;
+    private final CubeMemberRepository cubeMemberRepository;
 
     @Autowired
     public MemberController(InvitationService invitationService,  // ← Changed
-                            AuthenticationService authenticationService) {
+                            AuthenticationService authenticationService, CubeMemberRepository cubeMemberRepository) {
         this.invitationService = invitationService;
         this.authenticationService = authenticationService;
+        this.cubeMemberRepository = cubeMemberRepository;
     }
 
     @PostMapping("/invite")
@@ -33,6 +43,63 @@ public class MemberController {
         UUID cubeId = request.getCubeId();
 
         InviteMembersResponse response = invitationService.inviteMembers(cubeId, request, invitedBy);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/cube/{cubeId}")
+    public ResponseEntity<GetCubeMembersResponse> getCubeMembers(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable UUID cubeId) {
+
+        // Validate auth token
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+
+        // Get all members for this cube
+        List<CubeMember> members = cubeMemberRepository.findByCubeId(cubeId);
+
+        // Map to response
+        List<GetCubeMembersResponse.MemberInfo> memberInfoList = members.stream()
+                .map(member -> {
+                    GetCubeMembersResponse.MemberInfo info = new GetCubeMembersResponse.MemberInfo();
+                    info.setUserId(member.getUserId());
+                    info.setMemberId(member.getMemberId());
+                    info.setRoleId(member.getRoleId());
+                    info.setRoleName(member.getRoleId() == 1 ? "admin" : "member");  // 1=admin, 2=member
+                    info.setJoinedAt(member.getJoinedAt());
+                    info.setHasReceivedPayout(member.getHasReceivedPayout());
+                    info.setPayoutPosition(member.getPayoutPosition());
+                    return info;
+                })
+                .toList();
+
+        GetCubeMembersResponse response = new GetCubeMembersResponse(
+                cubeId,
+                memberInfoList.size(),
+                memberInfoList
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/verify-admin")
+    public ResponseEntity<VerifyAdminResponse> verifyAdmin(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody VerifyAdminRequest request) {
+
+        // Validate auth token
+        authenticationService.validateAndExtractUserId(authHeader);
+
+        // Query cube_members table by user_id and cube_id
+        Optional<CubeMember> memberOpt = cubeMemberRepository.findByCubeIdAndUserId(
+                request.getCubeId(),
+                request.getUserId()
+        );
+
+        // Check if member exists and if role_id = 1 (admin)
+        boolean isAdmin = memberOpt.isPresent() && memberOpt.get().getRoleId() == 1;
+
+        VerifyAdminResponse response = new VerifyAdminResponse(isAdmin);
 
         return ResponseEntity.ok(response);
     }

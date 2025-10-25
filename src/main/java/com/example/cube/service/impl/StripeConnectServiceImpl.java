@@ -76,9 +76,6 @@ public class StripeConnectServiceImpl implements StripeConnectService {
                     )
                     .setIndividual(
                             AccountCreateParams.Individual.builder()
-                                    .setEmail("rendasha@terpmail.umd.edu")
-                                    .setFirstName("egal")
-                                    .setLastName("endashaw")
                                     .build()
                     )
                     .putMetadata("user_id", userId.toString())
