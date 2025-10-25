@@ -9,6 +9,8 @@ import com.example.cube.model.Cube;
 import com.example.cube.model.CubeMember;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.security.AuthenticationService;
+import com.example.cube.repository.UserDetailsRepository;
+import com.example.cube.model.UserDetails;
 import com.example.cube.service.InvitationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +28,17 @@ public class MemberController {
     private final InvitationService invitationService;  // ← Changed from MemberService
     private final AuthenticationService authenticationService;
     private final CubeMemberRepository cubeMemberRepository;
+    private final UserDetailsRepository userDetailsRepository;
 
     @Autowired
     public MemberController(InvitationService invitationService,  // ← Changed
-                            AuthenticationService authenticationService, CubeMemberRepository cubeMemberRepository) {
+                            AuthenticationService authenticationService,
+                            CubeMemberRepository cubeMemberRepository,
+                            UserDetailsRepository userDetailsRepository) {
         this.invitationService = invitationService;
         this.authenticationService = authenticationService;
         this.cubeMemberRepository = cubeMemberRepository;
+        this.userDetailsRepository = userDetailsRepository;
     }
 
     @PostMapping("/invite")
@@ -64,11 +70,16 @@ public class MemberController {
                     GetCubeMembersResponse.MemberInfo info = new GetCubeMembersResponse.MemberInfo();
                     info.setUserId(member.getUserId());
                     info.setMemberId(member.getMemberId());
-                    info.setRoleId(member.getRoleId());
                     info.setRoleName(member.getRoleId() == 1 ? "admin" : "member");  // 1=admin, 2=member
                     info.setJoinedAt(member.getJoinedAt());
                     info.setHasReceivedPayout(member.getHasReceivedPayout());
                     info.setPayoutPosition(member.getPayoutPosition());
+                    // Populate names from user_details if available
+                    UserDetails ud = userDetailsRepository.findById(member.getUserId()).orElse(null);
+                    if (ud != null) {
+                        info.setFirstName(ud.getFirstName());
+                        info.setLastName(ud.getLastName());
+                    }
                     return info;
                 })
                 .toList();

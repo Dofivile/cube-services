@@ -20,6 +20,12 @@ public class UserDetails {
     @Column(name = "phonenumber")
     private String phonenumber;
 
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
     @Column(name = "stripe_customer_id", unique = true)
     private String stripeCustomerId;
 
@@ -81,5 +87,20 @@ public class UserDetails {
     public String getPhonenumber() {
         return phonenumber;
     }
-}
 
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+}
