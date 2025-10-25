@@ -45,7 +45,8 @@ public class CubeMapper {
         res.setStartDate(cube.getStartDate());
         res.setEndDate(cube.getEndDate());
         res.setNextPayoutDate(cube.getNextPayoutDate());
-        res.setTotalToBeCollected(cube.getTotalToBeCollected());
+        // Compute total to be collected on demand
+        res.setTotalToBeCollected(computeTotalToBeCollected(cube));
         res.setCreatedAt(cube.getCreatedAt());
 
         if (cube.getDuration() != null) {
@@ -56,8 +57,14 @@ public class CubeMapper {
 
     // Entity → StartCubeResponse
     public StartCubeResponse toStartCubeResponse(Cube cube) {
-        return new StartCubeResponse(cube.getCubeId(), cube.getStatusId(), cube.getCurrentCycle(),
-            cube.getStartDate(), cube.getEndDate(), cube.getTotalToBeCollected());
+        return new StartCubeResponse(
+                cube.getCubeId(),
+                cube.getStatusId(),
+                cube.getCurrentCycle(),
+                cube.getStartDate(),
+                cube.getEndDate(),
+                computeTotalToBeCollected(cube)
+        );
     }
 
     public GetCubeResponse toGetCubeResponse(Cube cube) {
@@ -83,4 +90,12 @@ public class CubeMapper {
         return response;
     }
 
+    private java.math.BigDecimal computeTotalToBeCollected(Cube cube) {
+        if (cube == null || cube.getAmountPerCycle() == null || cube.getNumberofmembers() == null) {
+            return java.math.BigDecimal.ZERO;
+        }
+        return cube.getAmountPerCycle()
+                .multiply(java.math.BigDecimal.valueOf(cube.getNumberofmembers()))
+                .multiply(java.math.BigDecimal.valueOf(cube.getNumberofmembers()));
+    }
 }

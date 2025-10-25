@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,18 +38,15 @@ public class CubeServiceImpl implements CubeService {
     @Override
     @Transactional  // - ensures both operations succeed or both fail
     public Cube createCubeFromDTO(CreateCubeRequest createCubeRequest) {
+        // Validate dates and currency
+        validateDatesAndCurrency(createCubeRequest);
         // 1. Create the cube
         Cube cube = cubeMapper.toEntity(createCubeRequest);
         cube.setDuration(durationRepo.getReferenceById(createCubeRequest.getDurationId()));
         cube.setCurrentCycle(1);
         cube.setRotationId(1);  // Set rotation system to random (1)
 
-        // 2. Calculate total to be collected
-        BigDecimal totalToBeCollected = createCubeRequest.getAmountPerCycle()
-                .multiply(BigDecimal.valueOf(createCubeRequest.getNumberofmembers()))
-                .multiply(BigDecimal.valueOf(createCubeRequest.getNumberofmembers()));
-        cube.setTotalToBeCollected(totalToBeCollected);
-
+        // 2. Persist cube (total_to_be_collected now computed on demand)
         Cube savedCube = cubeRepository.save(cube);
 
         // 3. Add creator as admin member
@@ -59,6 +57,27 @@ public class CubeServiceImpl implements CubeService {
         cubeMemberRepository.save(creatorMember);
 
         return savedCube;
+    }
+
+    private void validateDatesAndCurrency(CreateCubeRequest req) {
+        // Dates must be present and endDate strictly after startDate
+        Instant start = req.getStartDate();
+        Instant end = req.getEndDate();
+        if (start == null || end == null) {
+            throw new RuntimeException("startDate and endDate are required");
+        }
+        if (!end.isAfter(start)) {
+            throw new RuntimeException("endDate must be after startDate");
+        }
+
+        // Currency: must be a 3-letter uppercase ISO code; restrict to USD for now
+        String currency = req.getCurrency();
+        if (currency == null || !currency.matches("[A-Z]{3}")) {
+            throw new RuntimeException("currency must be a 3-letter uppercase code (e.g., USD)");
+        }
+        if (!"USD".equals(currency)) {
+            throw new RuntimeException("Only USD is supported at this time");
+        }
     }
 
     @Override
