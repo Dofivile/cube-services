@@ -166,6 +166,8 @@ public class UserAuthService {
             user.setUser_id(UUID.fromString(userId));
             user.setPhonenumber(req.getPhoneNumber());
             user.setDateofbirth(req.getDateOfBirth());
+            user.setFirstName(req.getFirstName());
+            user.setLastName(req.getLastName());
             userDetailsRepo.save(user);
 
             System.out.println("User details saved to local database");

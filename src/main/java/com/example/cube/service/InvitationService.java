@@ -13,6 +13,9 @@ public interface InvitationService {
      */
     InviteMembersResponse inviteMembers(UUID cubeId, InviteMembersRequest request, UUID invitedBy);
 
-    // We'll add acceptInvitation(), declineInvitation() later
+    // Accept an invitation using a token for the acting user
+    com.example.cube.dto.response.AcceptInvitationResponse acceptInvitation(String inviteToken, UUID actingUserId);
+
+    // We'll add declineInvitation() later
     AddMembersDirectResponse addMembersDirect(UUID cubeId, AddMembersDirectRequest request, UUID addedBy);
 }

@@ -13,4 +13,6 @@ public interface CubeInvitationRepository extends JpaRepository<CubeInvitation, 
 
     boolean existsByEmailAndCubeIdAndStatusId(String email, UUID cubeId, Integer statusId);
 
+    Optional<CubeInvitation> findByInviteToken(String inviteToken);
+
 }

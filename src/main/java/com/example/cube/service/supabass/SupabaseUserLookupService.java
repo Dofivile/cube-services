@@ -37,5 +37,4 @@ public class SupabaseUserLookupService {
         }
         return null;
     }
-
 }

@@ -8,7 +8,8 @@ public class SignUpAuthRequest {
     @NotBlank
     private String email;
     @NotBlank private String password;
-    @NotBlank private String fullName;
+    @NotBlank private String firstName;
+    @NotBlank private String lastName;
     @NotBlank private String phoneNumber;
     private LocalDate dateOfBirth;
 
@@ -24,9 +25,8 @@ public class SignUpAuthRequest {
         this.password = password;
     }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
@@ -40,9 +40,8 @@ public class SignUpAuthRequest {
         return password;
     }
 
-    public String getFullName() {
-        return fullName;
-    }
+    public String getFirstName() { return firstName; }
+    public String getLastName() { return lastName; }
 
     public String getPhoneNumber() {
         return phoneNumber;
@@ -52,4 +51,3 @@ public class SignUpAuthRequest {
         return dateOfBirth;
     }
 }
-

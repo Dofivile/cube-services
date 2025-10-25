@@ -22,8 +22,9 @@ public class GetCubeMembersResponse {
     public static class MemberInfo {
         private UUID userId;
         private UUID memberId;
-        private Integer roleId;
         private String roleName;  // "admin" or "member"
+        private String firstName;
+        private String lastName;
         private LocalDateTime joinedAt;
         private Boolean hasReceivedPayout;
         private Integer payoutPosition;
@@ -37,11 +38,14 @@ public class GetCubeMembersResponse {
         public UUID getMemberId() { return memberId; }
         public void setMemberId(UUID memberId) { this.memberId = memberId; }
 
-        public Integer getRoleId() { return roleId; }
-        public void setRoleId(Integer roleId) { this.roleId = roleId; }
-
         public String getRoleName() { return roleName; }
         public void setRoleName(String roleName) { this.roleName = roleName; }
+
+        public String getFirstName() { return firstName; }
+        public void setFirstName(String firstName) { this.firstName = firstName; }
+
+        public String getLastName() { return lastName; }
+        public void setLastName(String lastName) { this.lastName = lastName; }
 
         public LocalDateTime getJoinedAt() { return joinedAt; }
         public void setJoinedAt(LocalDateTime joinedAt) { this.joinedAt = joinedAt; }
