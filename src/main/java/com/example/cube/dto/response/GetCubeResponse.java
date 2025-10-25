@@ -17,6 +17,8 @@ public class GetCubeResponse {
     private Integer numberOfMembers;
     private Instant startDate;
     private Instant endDate;
+    private String contributionFrequency;  // "daily", "weekly", or "monthly"
+    private Integer contributionFrequencyDays;  // 1, 7, or 30
 
     public GetCubeResponse() {}
 
@@ -50,6 +52,22 @@ public class GetCubeResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getContributionFrequency() {
+        return contributionFrequency;
+    }
+
+    public Integer getContributionFrequencyDays() {
+        return contributionFrequencyDays;
+    }
+
+    public void setContributionFrequency(String contributionFrequency) {
+        this.contributionFrequency = contributionFrequency;
+    }
+
+    public void setContributionFrequencyDays(Integer contributionFrequencyDays) {
+        this.contributionFrequencyDays = contributionFrequencyDays;
     }
 
     public BigDecimal getAmountPerCycle() {

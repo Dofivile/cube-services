@@ -39,7 +39,6 @@ public class PayoutServiceImpl implements PayoutService {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.cubeMemberRepository = cubeMemberRepository;
     }
-
     @Override
     @Transactional
     public UUID sendPayoutToWinner(UUID winnerId, BigDecimal amount, UUID cubeId, Integer cycleNumber) {
@@ -58,8 +57,6 @@ public class PayoutServiceImpl implements PayoutService {
         if (!canUserReceivePayouts(winnerId)) {
             String error = "Winner hasn't completed Stripe onboarding or payouts not enabled";
             System.err.println("❌ " + error);
-
-            // Create failed transaction record
             return createFailedTransaction(winnerId, amount, cubeId, cycleNumber, error);
         }
 
@@ -67,28 +64,62 @@ public class PayoutServiceImpl implements PayoutService {
         CubeMember member = cubeMemberRepository.findByCubeIdAndUserId(cubeId, winnerId)
                 .orElseThrow(() -> new RuntimeException("Member not found in cube"));
 
-        // 4. Create Stripe Transfer
+        // 4. Initialize Stripe
         Stripe.apiKey = stripeApiKey;
 
         try {
             // Convert dollars to cents
             long amountInCents = amount.multiply(new BigDecimal("100")).longValue();
 
-            TransferCreateParams params = TransferCreateParams.builder()
+            // ============== STEP 1: TRANSFER TO STRIPE BALANCE ==============
+            System.out.println("📤 Step 1/2: Transferring to winner's Stripe balance...");
+
+            TransferCreateParams transferParams = TransferCreateParams.builder()
                     .setAmount(amountInCents)
                     .setCurrency("usd")
                     .setDestination(winner.getStripeAccountId())
                     .setDescription("Cube payout - Cycle " + cycleNumber + " - Cube " + cubeId)
+                    .putMetadata("winner_id", winnerId.toString())
+                    .putMetadata("cube_id", cubeId.toString())
+                    .putMetadata("cycle", cycleNumber.toString())
                     .build();
 
-            Transfer transfer = Transfer.create(params);
+            Transfer transfer = Transfer.create(transferParams);
 
-            System.out.println("✅ Stripe Transfer Created!");
+            System.out.println("✅ Transfer successful!");
             System.out.println("   Transfer ID: " + transfer.getId());
             System.out.println("   Amount: $" + amount);
             System.out.println("   Destination: " + winner.getStripeAccountId());
 
-            // 5. Create transaction record
+            // ============== STEP 2: PAYOUT TO BANK ACCOUNT ==============
+            System.out.println("🏦 Step 2/2: Initiating payout to bank account...");
+
+            // Create payout in the connected account's context
+            com.stripe.net.RequestOptions requestOptions = com.stripe.net.RequestOptions.builder()
+                    .setStripeAccount(winner.getStripeAccountId())
+                    .build();
+
+            java.util.Map<String, Object> payoutParams = new java.util.HashMap<>();
+            payoutParams.put("amount", amountInCents);
+            payoutParams.put("currency", "usd");
+            payoutParams.put("description", "Cube winnings - Cycle " + cycleNumber);
+
+            // Add metadata to payout
+            java.util.Map<String, String> payoutMetadata = new java.util.HashMap<>();
+            payoutMetadata.put("cube_id", cubeId.toString());
+            payoutMetadata.put("cycle", cycleNumber.toString());
+            payoutMetadata.put("transfer_id", transfer.getId());
+            payoutParams.put("metadata", payoutMetadata);
+
+            com.stripe.model.Payout payout = com.stripe.model.Payout.create(payoutParams, requestOptions);
+
+            System.out.println("✅ Payout initiated!");
+            System.out.println("   Payout ID: " + payout.getId());
+            System.out.println("   Status: " + payout.getStatus());
+            System.out.println("   Arrival date: " + new java.util.Date(payout.getArrivalDate() * 1000));
+            System.out.println("   💵 Money will arrive in winner's bank in 2-3 business days");
+
+            // 5. Create transaction record with BOTH IDs
             PaymentTransaction transaction = new PaymentTransaction();
             transaction.setUserId(winnerId);
             transaction.setMemberId(member.getMemberId());
@@ -98,6 +129,7 @@ public class PayoutServiceImpl implements PayoutService {
             transaction.setAmount(amount);
             transaction.setCycleNumber(cycleNumber);
             transaction.setStripeTransferId(transfer.getId());
+            transaction.setStripePaymentIntentId(payout.getId()); // Store payout ID here (or add new column)
             transaction.setProcessedAt(LocalDateTime.now());
 
             PaymentTransaction saved = paymentTransactionRepository.save(transaction);
@@ -113,14 +145,15 @@ public class PayoutServiceImpl implements PayoutService {
             return saved.getPaymentId();
 
         } catch (StripeException e) {
-            System.err.println("❌ Stripe transfer failed: " + e.getMessage());
+            System.err.println("❌ Payout failed: " + e.getMessage());
+            System.err.println("   Error code: " + e.getCode());
+            System.err.println("   Error type: " + e.getStripeError().getType());
             e.printStackTrace();
 
             // Create failed transaction record
             return createFailedTransaction(winnerId, amount, cubeId, cycleNumber, e.getMessage());
         }
     }
-
     @Override
     public boolean canUserReceivePayouts(UUID userId) {
         UserDetails user = userDetailsRepository.findById(userId).orElse(null);
