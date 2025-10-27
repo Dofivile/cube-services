@@ -35,6 +35,8 @@ public class StripeController {
     private final AuthenticationService authenticationService;
     private final UserDetailsRepository userDetailsRepository;
 
+    
+
     @Autowired
     public StripeController(
             StripePaymentService stripePaymentService,
@@ -67,6 +69,8 @@ public class StripeController {
 
         return ResponseEntity.ok(response);
     }
+
+    
 
     // ==================== ONBOARDING OPERATIONS ====================
 

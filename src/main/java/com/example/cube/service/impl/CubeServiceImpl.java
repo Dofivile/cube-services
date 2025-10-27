@@ -38,19 +38,21 @@ public class CubeServiceImpl implements CubeService {
     @Override
     @Transactional  // - ensures both operations succeed or both fail
     public Cube createCubeFromDTO(CreateCubeRequest createCubeRequest) {
-        // Validate dates and currency
+
+        Cube cube;
+        Cube savedCube;
+        CubeMember creatorMember;
+
         validateDatesAndCurrency(createCubeRequest);
-        // 1. Create the cube
-        Cube cube = cubeMapper.toEntity(createCubeRequest);
+
+        cube = cubeMapper.toEntity(createCubeRequest);
         cube.setDuration(durationRepo.getReferenceById(createCubeRequest.getDurationId()));
         cube.setCurrentCycle(1);
-        cube.setRotationId(1);  // Set rotation system to random (1)
+        cube.setRotationId(1);  // Set rotation system to random (1) -- (2) is poll system
+        savedCube = cubeRepository.save(cube);
 
-        // 2. Persist cube (total_to_be_collected now computed on demand)
-        Cube savedCube = cubeRepository.save(cube);
-
-        // 3. Add creator as admin member
-        CubeMember creatorMember = new CubeMember();
+        // Add creator as admin member
+        creatorMember = new CubeMember();
         creatorMember.setCubeId(savedCube.getCubeId());
         creatorMember.setUserId(createCubeRequest.getUser_id());
         creatorMember.setRoleId(1);  // 1 = Admin role
@@ -60,7 +62,6 @@ public class CubeServiceImpl implements CubeService {
     }
 
     private void validateDatesAndCurrency(CreateCubeRequest req) {
-        // Dates must be present and endDate strictly after startDate
         Instant start = req.getStartDate();
         Instant end = req.getEndDate();
         if (start == null || end == null) {
@@ -69,8 +70,6 @@ public class CubeServiceImpl implements CubeService {
         if (!end.isAfter(start)) {
             throw new RuntimeException("endDate must be after startDate");
         }
-
-        // Currency: must be a 3-letter uppercase ISO code; restrict to USD for now
         String currency = req.getCurrency();
         if (currency == null || !currency.matches("[A-Z]{3}")) {
             throw new RuntimeException("currency must be a 3-letter uppercase code (e.g., USD)");
@@ -83,24 +82,12 @@ public class CubeServiceImpl implements CubeService {
     @Override
     public List<UUID> getUserCubeIds(UUID userId) {
         List<CubeMember> membershipList = cubeMemberRepository.findByUserId(userId);
-        return membershipList.stream()
-                .map(CubeMember::getCubeId)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Cube> getAllCubes() {
-        return cubeRepository.findAll();
+        return membershipList.stream().map(CubeMember::getCubeId).collect(Collectors.toList());
     }
 
     @Override
     public Cube getCubeById(UUID cubeId) {
-        return cubeRepository.findById(cubeId)
-                .orElseThrow(() -> new RuntimeException("Cube not found with ID: " + cubeId));
+        return cubeRepository.findById(cubeId).orElseThrow(() -> new RuntimeException("Cube not found with ID: " + cubeId));
     }
 
-    @Override
-    public void deleteCube(UUID cubeId) {
-        cubeRepository.deleteById(cubeId);
-    }
 }

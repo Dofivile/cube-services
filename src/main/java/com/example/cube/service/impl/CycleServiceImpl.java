@@ -9,7 +9,6 @@ import com.example.cube.model.PaymentTransaction;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.repository.CubeRepository;
 import com.example.cube.repository.PaymentTransactionRepository;
-import com.example.cube.service.BankService;
 import com.example.cube.service.CycleService;
 import com.example.cube.service.PayoutService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,19 +32,16 @@ public class CycleServiceImpl implements CycleService {
     private final CubeRepository cubeRepository;
     private final CubeMemberRepository cubeMemberRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
-    private final BankService bankService;
     private final PayoutService payoutService;
 
     @Autowired
     public CycleServiceImpl(CubeRepository cubeRepository,
                             CubeMemberRepository cubeMemberRepository,
                             PaymentTransactionRepository paymentTransactionRepository,
-                            BankService bankService,
                             PayoutService payoutService) {
         this.cubeRepository = cubeRepository;
         this.cubeMemberRepository = cubeMemberRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
-        this.bankService = bankService;
         this.payoutService = payoutService;
     }
 
@@ -144,8 +140,7 @@ public class CycleServiceImpl implements CycleService {
         payoutTx.setProcessedAt(LocalDateTime.now());
         paymentTransactionRepository.save(payoutTx);
 
-        // Withdraw from bank
-        bankService.withdraw(payoutAmount);
+        // Funds movement handled via Stripe Transfer/Payout (no local bank withdrawal)
 
         // Mark winner as paid
         winner.setHasReceivedPayout(true);
@@ -175,160 +170,11 @@ public class CycleServiceImpl implements CycleService {
         response.setPayoutAmount(payoutAmount);
         response.setRemainingMembers(unpaidMembers.size() - 1);
         response.setIsComplete(isComplete);
-        response.setBankBalance(bankService.getBalance());
+        // Optional: expose Stripe balance via a dedicated admin endpoint if needed
 
         return response;
     }
 
-    @Override
-    public CycleStatusDTO getCurrentCycleStatus(UUID cubeId) {
-
-        Cube cube = cubeRepository.findById(cubeId)
-                .orElseThrow(() -> new RuntimeException("Cube not found"));
-
-        List<CubeMember> allMembers = cubeMemberRepository.findByCubeId(cubeId);
-
-        // Map members to status
-        List<MemberPayoutStatus> memberStatuses = allMembers.stream()
-                .map(member -> {
-                    MemberPayoutStatus status = new MemberPayoutStatus();
-                    status.setUserId(member.getUserId());
-                    status.setHasReceived(member.getHasReceivedPayout());
-                    status.setPayoutCycle(member.getPayoutPosition());
-                    status.setPayoutDate(member.getPayoutDate());
-                    return status;
-                })
-                .collect(Collectors.toList());
-
-        long unpaidCount = allMembers.stream()
-                .filter(m -> !m.getHasReceivedPayout())
-                .count();
-
-        // Compute total to be collected on the fly: amount_per_cycle * members * members
-        BigDecimal totalToBeCollected = cube.getAmountPerCycle()
-                .multiply(BigDecimal.valueOf(cube.getNumberofmembers()))
-                .multiply(BigDecimal.valueOf(cube.getNumberofmembers()));
-
-        // Calculate progress percentage
-        BigDecimal progressPercentage = BigDecimal.ZERO;
-        if (totalToBeCollected.compareTo(BigDecimal.ZERO) > 0) {
-            progressPercentage = cube.getTotalAmountCollected()
-                    .divide(totalToBeCollected, 4, java.math.RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100));
-        }
-
-        // Build response
-        CycleStatusDTO response = new CycleStatusDTO();
-        response.setCubeId(cubeId);
-        response.setCurrentCycle(cube.getCurrentCycle());
-        response.setTotalCycles(cube.getNumberofmembers());
-        response.setTotalToBeCollected(totalToBeCollected);
-        response.setTotalAmountCollected(cube.getTotalAmountCollected());
-        response.setProgressPercentage(progressPercentage);
-        response.setNextPayoutDate(cube.getNextPayoutDate());
-        response.setRemainingMembers((int) unpaidCount);
-        response.setMembers(memberStatuses);
-        response.setIsComplete(unpaidCount == 0);
-
-        return response;
-    }
-
-    @Override
-    @Transactional
-    public boolean recordMemberPayment(UUID cubeId, UUID userId, Integer cycleNumber) {
-
-        // 1. Get cube and member
-        Cube cube = cubeRepository.findById(cubeId)
-                .orElseThrow(() -> new RuntimeException("Cube not found"));
-
-        CubeMember member = cubeMemberRepository.findByCubeIdAndUserId(cubeId, userId)
-                .orElseThrow(() -> new RuntimeException("You are not a member of this cube"));
-
-        // 2. Validate cycle number
-        if (!cycleNumber.equals(cube.getCurrentCycle())) {
-            throw new RuntimeException("Invalid cycle number. Current cycle is: " + cube.getCurrentCycle());
-        }
-
-        // 3. Check if already paid for this cycle
-        boolean alreadyPaid = paymentTransactionRepository
-                .existsByCubeIdAndMemberIdAndCycleNumberAndTypeIdAndStatusId(
-                        cubeId, member.getMemberId(), cycleNumber, 1, 2);
-
-        if (alreadyPaid) {
-            throw new RuntimeException("You have already paid for cycle " + cycleNumber);
-        }
-
-        // 4. Record the payment transaction
-        PaymentTransaction transaction = new PaymentTransaction();
-        transaction.setCubeId(cubeId);
-        transaction.setUserId(userId);
-        transaction.setMemberId(member.getMemberId());
-        transaction.setTypeId(1);  // contribution
-        transaction.setStatusId(2);  // completed (simulated for MVP)
-        transaction.setAmount(cube.getAmountPerCycle());
-        transaction.setCycleNumber(cycleNumber);
-        transaction.setCreatedAt(LocalDateTime.now());
-        transaction.setProcessedAt(LocalDateTime.now());
-        paymentTransactionRepository.save(transaction);
-
-        // 5. Deposit to bank
-        bankService.deposit(cube.getAmountPerCycle());
-
-        // 6. Update cube's total collected
-        cube.setTotalAmountCollected(
-                cube.getTotalAmountCollected().add(cube.getAmountPerCycle())
-        );
-
-        // 7. Check if all members have paid
-        boolean allPaid = haveAllMembersPaid(cubeId, cycleNumber);
-
-        // 8. If all paid and this is cycle 1, activate the cube
-        if (allPaid && cycleNumber == 1 && cube.getStatusId() == 4) {
-            cube.setStatusId(2);  // Set to active
-        }
-
-        cubeRepository.save(cube);
-
-        return allPaid;
-    }
-
-    @Override
-    public Map<String, Object> getCyclePaymentStatus(UUID cubeId, Integer cycleNumber) {
-
-        List<CubeMember> allMembers = cubeMemberRepository.findByCubeId(cubeId);
-        long totalMembers = allMembers.size();
-
-        // Check payment status for each member
-        List<Map<String, Object>> memberPayments = allMembers.stream()
-                .map(member -> {
-                    boolean hasPaid = paymentTransactionRepository
-                            .existsByCubeIdAndMemberIdAndCycleNumberAndTypeIdAndStatusId(
-                                    cubeId, member.getMemberId(), cycleNumber, 1, 2);
-
-                    Map<String, Object> memberInfo = new HashMap<>();
-                    memberInfo.put("userId", member.getUserId());
-                    memberInfo.put("memberId", member.getMemberId());
-                    memberInfo.put("hasPaid", hasPaid);
-                    return memberInfo;
-                })
-                .collect(Collectors.toList());
-
-        long paidCount = memberPayments.stream()
-                .filter(m -> (Boolean) m.get("hasPaid"))
-                .count();
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("cubeId", cubeId);
-        result.put("cycleNumber", cycleNumber);
-        result.put("totalMembers", totalMembers);
-        result.put("paidMembers", paidCount);
-        result.put("allPaid", paidCount >= totalMembers);
-        result.put("members", memberPayments);
-
-        return result;
-    }
-
-    // Helper method to calculate next payout date
     private Instant calculateNextPayoutDate(Cube cube) {
         if (cube.getDuration() == null || cube.getStartDate() == null) {
             return null;

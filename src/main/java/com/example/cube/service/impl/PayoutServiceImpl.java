@@ -11,6 +11,7 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Account;
 import com.stripe.model.Transfer;
+import com.stripe.model.Balance;
 import com.stripe.param.TransferCreateParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,6 +71,19 @@ public class PayoutServiceImpl implements PayoutService {
         try {
             // Convert dollars to cents
             long amountInCents = amount.multiply(new BigDecimal("100")).longValue();
+
+            // ============== PRE-CHECK: PLATFORM STRIPE BALANCE ==============
+            Balance platformBalance = Balance.retrieve();
+            long availableUsd = platformBalance.getAvailable().stream()
+                    .filter(m -> "usd".equalsIgnoreCase(m.getCurrency()))
+                    .mapToLong(m -> m.getAmount())
+                    .sum();
+
+            if (availableUsd < amountInCents) {
+                String msg = "Insufficient Stripe balance: have $" + (availableUsd / 100.0) + ", need $" + amount;
+                System.err.println("❌ " + msg);
+                return createFailedTransaction(winnerId, amount, cubeId, cycleNumber, msg);
+            }
 
             // ============== STEP 1: TRANSFER TO STRIPE BALANCE ==============
             System.out.println("📤 Step 1/2: Transferring to winner's Stripe balance...");

@@ -9,24 +9,9 @@ import java.util.UUID;
 
 public interface CycleService {
 
-    // Start the cube (transition from draft to active)
+    // Start a cube (transition from draft/pending to active)
     Cube startCube(UUID cubeId, UUID userId);
 
     // Process current cycle (collect payments, select winner, payout)
     CycleProcessDTO processCycle(UUID cubeId);
-
-    /**
-     * Get current cycle status
-     */
-    CycleStatusDTO getCurrentCycleStatus(UUID cubeId);
-
-    /**
-     * Record a member's payment for a cycle
-     */
-    boolean recordMemberPayment(UUID cubeId, UUID userId, Integer cycleNumber);
-
-    /**
-     * Get payment status for all members in a specific cycle
-     */
-    Map<String, Object> getCyclePaymentStatus(UUID cubeId, Integer cycleNumber);
 }

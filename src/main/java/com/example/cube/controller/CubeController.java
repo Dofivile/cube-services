@@ -38,9 +38,7 @@ public class CubeController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<CreateCubeResponse> createCube(@RequestHeader("Authorization") String authHeader,
-                                                         @RequestBody CreateCubeRequest createCubeRequest) {
-        // Validate and extract user ID (throws UnauthorizedException if invalid)
+    public ResponseEntity<CreateCubeResponse> createCube(@RequestHeader("Authorization") String authHeader, @RequestBody CreateCubeRequest createCubeRequest) {
         authenticationService.validateAndExtractUserId(authHeader);
 
         Cube savedCube = cubeService.createCubeFromDTO(createCubeRequest);

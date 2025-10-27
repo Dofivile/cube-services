@@ -8,7 +8,6 @@ import com.example.cube.model.PaymentTransaction;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.repository.CubeRepository;
 import com.example.cube.repository.PaymentTransactionRepository;
-import com.example.cube.service.BankService;
 import com.example.cube.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,17 +21,14 @@ public class PaymentServiceImpl implements PaymentService {
     private final CubeRepository cubeRepository;
     private final CubeMemberRepository cubeMemberRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
-    private final BankService bankService;
 
     @Autowired
     public PaymentServiceImpl(CubeRepository cubeRepository,
                               CubeMemberRepository cubeMemberRepository,
-                              PaymentTransactionRepository paymentTransactionRepository,
-                              BankService bankService) {
+                              PaymentTransactionRepository paymentTransactionRepository) {
         this.cubeRepository = cubeRepository;
         this.cubeMemberRepository = cubeMemberRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
-        this.bankService = bankService;
     }
 
     @Override
@@ -90,8 +86,7 @@ public class PaymentServiceImpl implements PaymentService {
             transaction.setProcessedAt(LocalDateTime.now());
             paymentTransactionRepository.save(transaction);
 
-            // 8. Deposit to bank
-            bankService.deposit(cube.getAmountPerCycle());
+            // 8. Deposit handled by Stripe in the real flow; no local bank ledger
 
             // 9. Update cube's total collected
             cube.setTotalAmountCollected(

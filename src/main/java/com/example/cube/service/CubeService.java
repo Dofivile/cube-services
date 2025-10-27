@@ -17,14 +17,7 @@ public interface CubeService {
     // Get all cube IDs for a user
     List<UUID> getUserCubeIds(UUID userId);
 
-    // Retrieve all Cubes
-    List<Cube> getAllCubes();
-
     // Retrieve a single Cube by ID
     Cube getCubeById(UUID cubeId);
-
-    // Delete a Cube
-    void deleteCube(UUID cubeId);
-
 
 }
