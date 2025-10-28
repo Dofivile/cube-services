@@ -1,5 +1,6 @@
 package com.example.cube.jobs;
 
+import com.example.cube.dto.response.CycleProcessDTO;
 import com.example.cube.model.Cube;
 import com.example.cube.repository.CubeRepository;
 import com.example.cube.service.CycleService;
@@ -60,10 +61,30 @@ public class CycleScheduler {
                 }
                 try {
                     logger.info("Scheduler: Processing cycle for cube: {}", cubeId);
-                    cycleService.processCycle(cubeId);
-                    logger.info("Scheduler: Successfully processed cube: {}", cubeId);
+                    CycleProcessDTO result = cycleService.processCycle(cubeId);
+                    
+                    if (result.getIsComplete()) {
+                        logger.info("Scheduler: ✅ Cube {} is complete - all {} members have received their payouts", 
+                                cubeId, cube.getNumberofmembers());
+                    } else {
+                        logger.info("Scheduler: ✅ Successfully processed cycle {} for cube: {} (Winner: {}, Payout: ${}, Remaining: {})", 
+                                result.getCycle(), 
+                                cubeId, 
+                                result.getWinnerUserId(), 
+                                result.getPayoutAmount(), 
+                                result.getRemainingMembers());
+                    }
                 } catch (Exception e) {
-                    logger.error("Scheduler: Error processing cube {}: {}", cubeId, e.getMessage(), e);
+                    // Check if this is a completion-related message (not a real error)
+                    String errorMsg = e.getMessage();
+                    if (errorMsg != null && (errorMsg.contains("all members") || 
+                                            errorMsg.contains("fully paid") || 
+                                            errorMsg.contains("complete"))) {
+                        logger.info("Scheduler: ℹ️ Cube {} has completed all payouts: {}", cubeId, errorMsg);
+                    } else {
+                        // Log actual errors
+                        logger.error("Scheduler: ❌ Error processing cube {}: {}", cubeId, errorMsg, e);
+                    }
                     // Continue to next cube even if one fails
                 } finally {
                     // Release lock
