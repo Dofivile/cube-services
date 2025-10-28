@@ -43,14 +43,13 @@ public class CubeServiceImpl implements CubeService {
         Cube savedCube;
         CubeMember creatorMember;
 
-        validateDatesAndCurrency(createCubeRequest);
+        validateCurrency(createCubeRequest);
 
         cube = cubeMapper.toEntity(createCubeRequest);
         cube.setDuration(durationRepo.getReferenceById(createCubeRequest.getDurationId()));
         cube.setCurrentCycle(1);
         cube.setRotationId(1);  // Set rotation system to random (1) -- (2) is poll system
         savedCube = cubeRepository.save(cube);
-
         // Add creator as admin member
         creatorMember = new CubeMember();
         creatorMember.setCubeId(savedCube.getCubeId());
@@ -61,15 +60,8 @@ public class CubeServiceImpl implements CubeService {
         return savedCube;
     }
 
-    private void validateDatesAndCurrency(CreateCubeRequest req) {
-        Instant start = req.getStartDate();
-        Instant end = req.getEndDate();
-        if (start == null || end == null) {
-            throw new RuntimeException("startDate and endDate are required");
-        }
-        if (!end.isAfter(start)) {
-            throw new RuntimeException("endDate must be after startDate");
-        }
+    private void validateCurrency(CreateCubeRequest req) {
+        // MVP: do not require start/end dates; they will be set when payments settle/activate
         String currency = req.getCurrency();
         if (currency == null || !currency.matches("[A-Z]{3}")) {
             throw new RuntimeException("currency must be a 3-letter uppercase code (e.g., USD)");

@@ -50,12 +50,9 @@ public class StripePaymentServiceImpl implements StripePaymentService {
     public PaymentIntentResponse createPaymentIntent(UUID userId, UUID cubeId, UUID memberId, Integer cycleNumber) {
 
         // 1. Get and validate cube
-        Cube cube = cubeRepository.findById(cubeId)
-                .orElseThrow(() -> new RuntimeException("Cube not found"));
-
+        Cube cube = cubeRepository.findById(cubeId).orElseThrow(() -> new RuntimeException("Cube not found"));
         // 2. Get and validate member
-        CubeMember member = cubeMemberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("Member not found"));
+        CubeMember member = cubeMemberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("Member not found"));
 
         // 3. Validate that member belongs to this cube and user
         if (!member.getCubeId().equals(cubeId)) {
@@ -173,6 +170,25 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             // If all paid and this is cycle 1, activate the cube
             if (paidMembers >= totalMembers && cycleNumber == 1 && cube.getStatusId() == 4) {
                 cube.setStatusId(2);  // Set to active
+                // Set start date if not set (MVP: start when payments for cycle 1 settle)
+                if (cube.getStartDate() == null) {
+                    cube.setStartDate(java.time.Instant.now());
+                }
+                // Compute next payout date based on duration/current cycle
+                if (cube.getDuration() != null && cube.getStartDate() != null) {
+                    String durationName = cube.getDuration().getDurationName();
+                    int durationDays = cube.getDuration().getDurationDays();
+                    int current = cube.getCurrentCycle() != null ? cube.getCurrentCycle() : 1;
+                    java.time.Instant next;
+                    if (durationName != null && durationName.equalsIgnoreCase("MINUTES")) {
+                        int minutes = 3 * current;
+                        next = cube.getStartDate().plus(java.time.Duration.ofMinutes(minutes));
+                    } else {
+                        long days = (long) durationDays * current;
+                        next = cube.getStartDate().plus(java.time.Duration.ofDays(days));
+                    }
+                    cube.setNextPayoutDate(next);
+                }
             }
 
             cubeRepository.save(cube);

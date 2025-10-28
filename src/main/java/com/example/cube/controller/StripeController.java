@@ -8,6 +8,9 @@ import com.example.cube.service.PayoutService;
 import com.example.cube.service.StripeConnectService;
 import com.example.cube.service.StripePaymentService;
 import com.stripe.exception.SignatureVerificationException;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Balance;
+import com.stripe.Stripe;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
@@ -35,7 +38,8 @@ public class StripeController {
     private final AuthenticationService authenticationService;
     private final UserDetailsRepository userDetailsRepository;
 
-    
+    @Value("${stripe.api.key}")
+    private String stripeApiKey;
 
     @Autowired
     public StripeController(
@@ -60,6 +64,14 @@ public class StripeController {
 
         UUID userId = authenticationService.validateAndExtractUserId(authHeader);
 
+        // Enforce onboarding before payment: user must have a Stripe connected account
+        var user = userDetailsRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        boolean payoutsEnabled = user.getStripePayoutsEnabled() != null && user.getStripePayoutsEnabled();
+        if (user.getStripeAccountId() == null || !payoutsEnabled) {
+            throw new RuntimeException("Complete Stripe onboarding before making a payment");
+        }
+
         PaymentIntentResponse response = stripePaymentService.createPaymentIntent(
                 userId,
                 request.getCubeId(),
@@ -70,18 +82,48 @@ public class StripeController {
         return ResponseEntity.ok(response);
     }
 
+    // ==================== PLATFORM BALANCE (ADMIN/OPS) ====================
+    @GetMapping("/balance")
+    public ResponseEntity<Map<String, Object>> getPlatformBalance(
+            @RequestHeader("Authorization") String authHeader) {
+
+        authenticationService.validateAndExtractUserId(authHeader);
+
+        try {
+            Stripe.apiKey = stripeApiKey;
+            Balance bal = Balance.retrieve();
+
+            long availableUsd = bal.getAvailable().stream()
+                    .filter(m -> "usd".equalsIgnoreCase(m.getCurrency()))
+                    .mapToLong(m -> m.getAmount())
+                    .sum();
+
+            long pendingUsd = bal.getPending().stream()
+                    .filter(m -> "usd".equalsIgnoreCase(m.getCurrency()))
+                    .mapToLong(m -> m.getAmount())
+                    .sum();
+
+            return ResponseEntity.ok(Map.of(
+                    "availableUsd", availableUsd / 100.0,
+                    "pendingUsd", pendingUsd / 100.0
+            ));
+
+        } catch (StripeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "error", "Failed to retrieve Stripe balance",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
     
 
     // ==================== ONBOARDING OPERATIONS ====================
 
     @PostMapping("/onboarding/initiate")
-    public ResponseEntity<Map<String, String>> initiateOnboarding(
-            @RequestHeader("Authorization") String authHeader) {
-
+    public ResponseEntity<Map<String, String>> initiateOnboarding(@RequestHeader("Authorization") String authHeader) {
         UUID userId = authenticationService.validateAndExtractUserId(authHeader);
-
         System.out.println("📝 Initiating Stripe Connect onboarding for user: " + userId);
-
         String onboardingUrl = stripeConnectService.createConnectedAccountAndGetOnboardingLink(userId);
 
         Map<String, String> response = new HashMap<>();
@@ -106,6 +148,31 @@ public class StripeController {
         response.put("stripeAccountId", user.getStripeAccountId());
 
         return ResponseEntity.ok(response);
+    }
+
+    // Simple check endpoint for frontend UX
+    @GetMapping("/onboarding/check")
+    public ResponseEntity<Map<String, Object>> checkOnboarding(
+            @RequestHeader("Authorization") String authHeader) {
+
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+        var user = userDetailsRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean hasAccount = user.getStripeAccountId() != null;
+        boolean payoutsEnabled = user.getStripePayoutsEnabled() != null && user.getStripePayoutsEnabled();
+        boolean onboarded = hasAccount && payoutsEnabled;
+
+        String message = onboarded
+                ? "Stripe account is set up and payouts are enabled"
+                : "You have not set up your Stripe account";
+
+        return ResponseEntity.ok(Map.of(
+                "onboarded", onboarded,
+                "hasStripeAccount", hasAccount,
+                "payoutsEnabled", payoutsEnabled,
+                "message", message
+        ));
     }
 
     // ==================== PAYOUT OPERATIONS ====================

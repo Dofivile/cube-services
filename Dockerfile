@@ -28,6 +28,7 @@ COPY --from=build /app/target/cube-0.0.1-SNAPSHOT.jar app.jar
 
 # Expose port (Render will override with PORT env var)
 EXPOSE 8080
+ENV PORT=8080
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
