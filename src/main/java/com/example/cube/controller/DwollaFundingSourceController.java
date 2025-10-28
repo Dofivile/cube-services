@@ -31,27 +31,6 @@ public class DwollaFundingSourceController {
         this.authenticationService = authenticationService;
     }
 
-    // ==================== CREATE FUNDING SOURCE ====================
-
-    @PostMapping("/create")
-    public ResponseEntity<FundingSourceResponse> createFundingSource(
-            @RequestHeader("Authorization") String authHeader,
-            @Valid @RequestBody CreateFundingSourceRequest request) {
-
-        try {
-            UUID userId = authenticationService.validateAndExtractUserId(authHeader);
-            System.out.println("🏦 Adding bank account for user: " + userId);
-
-            FundingSourceResponse response = dwollaFundingSourceService.createFundingSource(userId, request);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
-        } catch (Exception e) {
-            System.err.println("❌ Failed to create funding source: " + e.getMessage());
-            throw new RuntimeException("Failed to create funding source: " + e.getMessage());
-        }
-    }
-
     // ==================== LIST FUNDING SOURCES ====================
 
     @GetMapping("/list")
