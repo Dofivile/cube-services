@@ -37,6 +37,39 @@ public class UserDetails {
     @Column(name = "stripe_payouts_enabled")
     private Boolean stripePayoutsEnabled;
 
+    @Column(name = "dwolla_customer_id", unique = true)
+    private String dwollaCustomerId;
+
+    @Column(name = "dwolla_status")
+    private String dwollaStatus;
+
+    @Column(name = "dwolla_funding_source_id")
+    private String dwollaFundingSourceId;
+
+    public String getDwollaCustomerId() {
+        return dwollaCustomerId;
+    }
+
+    public String getDwollaStatus() {
+        return dwollaStatus;
+    }
+
+    public void setDwollaCustomerId(String dwollaCustomerId) {
+        this.dwollaCustomerId = dwollaCustomerId;
+    }
+
+    public void setDwollaStatus(String dwollaStatus) {
+        this.dwollaStatus = dwollaStatus;
+    }
+
+    public void setDwollaFundingSourceId(String dwollaFundingSourceId) {
+        this.dwollaFundingSourceId = dwollaFundingSourceId;
+    }
+
+    public String getDwollaFundingSourceId() {
+        return dwollaFundingSourceId;
+    }
+
     public void setStripePayoutsEnabled(Boolean stripePayoutsEnabled) {
         this.stripePayoutsEnabled = stripePayoutsEnabled;
     }

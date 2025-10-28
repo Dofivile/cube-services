@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -40,6 +41,9 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
             Integer cycleNumber,
             Integer typeId
     );
+
+    // Replace the Stripe method with Dwolla
+    Optional<PaymentTransaction> findByDwollaTransferId(String dwollaTransferId);
 
     boolean existsByStripePaymentIntentId(String stripePaymentIntentId);
 }

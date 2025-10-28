@@ -117,7 +117,12 @@ public class CycleServiceImpl implements CycleService {
                 .findByCubeIdAndHasReceivedPayout(cubeId, false);
 
         if (unpaidMembers.isEmpty()) {
-            throw new RuntimeException("All members have been paid");
+            // Idempotent no-op: cube fully paid out
+            CycleProcessDTO response = new CycleProcessDTO();
+            response.setIsComplete(true);
+            response.setCycle(currentCycle);
+            response.setRemainingMembers(0);
+            return response;
         }
 
         SecureRandom random = new SecureRandom();

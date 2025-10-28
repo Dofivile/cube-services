@@ -54,6 +54,42 @@ public class PaymentTransaction {
     @Column(name = "stripe_fee")
     private BigDecimal stripeFee = BigDecimal.ZERO;
 
+    // Add these fields after the existing Stripe fields (or replace them if fully migrating)
+
+    @Column(name = "dwolla_transfer_id", unique = true)
+    private String dwollaTransferId;
+
+    @Column(name = "dwolla_transfer_url")
+    private String dwollaTransferUrl;
+
+    @Column(name = "dwolla_correlation_id")
+    private String dwollaCorrelationId;
+
+    // Add getters and setters
+    public String getDwollaTransferId() {
+        return dwollaTransferId;
+    }
+
+    public void setDwollaTransferId(String dwollaTransferId) {
+        this.dwollaTransferId = dwollaTransferId;
+    }
+
+    public String getDwollaTransferUrl() {
+        return dwollaTransferUrl;
+    }
+
+    public void setDwollaTransferUrl(String dwollaTransferUrl) {
+        this.dwollaTransferUrl = dwollaTransferUrl;
+    }
+
+    public String getDwollaCorrelationId() {
+        return dwollaCorrelationId;
+    }
+
+    public void setDwollaCorrelationId(String dwollaCorrelationId) {
+        this.dwollaCorrelationId = dwollaCorrelationId;
+    }
+
     public String getFailureReason() {
         return failureReason;
     }
