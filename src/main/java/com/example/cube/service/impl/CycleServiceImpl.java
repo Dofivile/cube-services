@@ -116,8 +116,26 @@ public class CycleServiceImpl implements CycleService {
         List<CubeMember> unpaidMembers = cubeMemberRepository
                 .findByCubeIdAndHasReceivedPayout(cubeId, false);
 
+        // FIXED: Handle the case where all members have already been paid
         if (unpaidMembers.isEmpty()) {
-            throw new RuntimeException("All members have been paid");
+            System.out.println("⚠️ Cube " + cubeId + " has all members paid. Marking as completed.");
+
+            // Mark cube as completed if not already
+            if (cube.getStatusId() == 2) {
+                cube.setStatusId(3);  // completed
+                cube.setEndDate(Instant.now());
+                cube.setNextPayoutDate(null);
+                cubeRepository.save(cube);
+            }
+
+            // Return a response indicating completion
+            CycleProcessDTO response = new CycleProcessDTO();
+            response.setCycle(currentCycle);
+            response.setWinnerUserId(null);
+            response.setPayoutAmount(BigDecimal.ZERO);
+            response.setRemainingMembers(0);
+            response.setIsComplete(true);
+            return response;
         }
 
         SecureRandom random = new SecureRandom();
@@ -155,6 +173,7 @@ public class CycleServiceImpl implements CycleService {
             cube.setStatusId(3);  // completed
             cube.setEndDate(Instant.now());
             cube.setNextPayoutDate(null);
+            System.out.println("✅ Cube " + cubeId + " completed! All members have received payouts.");
         } else {
             // Advance to next cycle
             cube.setCurrentCycle(currentCycle + 1);
@@ -170,7 +189,6 @@ public class CycleServiceImpl implements CycleService {
         response.setPayoutAmount(payoutAmount);
         response.setRemainingMembers(unpaidMembers.size() - 1);
         response.setIsComplete(isComplete);
-        // Optional: expose Stripe balance via a dedicated admin endpoint if needed
 
         return response;
     }
