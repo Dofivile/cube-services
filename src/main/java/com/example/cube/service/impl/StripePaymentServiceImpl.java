@@ -91,15 +91,37 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             metadata.put("member_id", memberId.toString());
             metadata.put("cycle_number", cycleNumber.toString());
 
+
+
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(amountInCents)
                     .setCurrency("usd")
                     .setCustomer(customerId)
-                    .setAutomaticPaymentMethods(
-                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                    .setEnabled(true)
+                    // NEW: Specify ACH payment method
+                    .addPaymentMethodType("us_bank_account")
+                    // NEW: Configure Financial Connections
+                    .setPaymentMethodOptions(
+                            PaymentIntentCreateParams.PaymentMethodOptions.builder()
+                                    .setUsBankAccount(
+                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount.builder()
+                                                    .setFinancialConnections(
+                                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount
+                                                                    .FinancialConnections.builder()
+                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
+                                                                            .UsBankAccount.FinancialConnections.Permission.PAYMENT_METHOD)
+                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
+                                                                            .UsBankAccount.FinancialConnections.Permission.BALANCES)
+                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
+                                                                            .UsBankAccount.FinancialConnections.Permission.OWNERSHIP)
+                                                                    .build()
+                                                    )
+                                                    .setVerificationMethod(PaymentIntentCreateParams.PaymentMethodOptions
+                                                            .UsBankAccount.VerificationMethod.INSTANT) // Use Financial Connections only
+                                                    .build()
+                                    )
                                     .build()
                     )
+                    .setConfirmationMethod(PaymentIntentCreateParams.ConfirmationMethod.AUTOMATIC)
                     .putAllMetadata(metadata)
                     .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
                     .build();

@@ -4,6 +4,7 @@ import com.example.cube.dto.request.CreatePaymentIntentRequest;
 import com.example.cube.dto.response.PaymentIntentResponse;
 import com.example.cube.repository.UserDetailsRepository;
 import com.example.cube.security.AuthenticationService;
+import com.example.cube.service.BankAccountService;
 import com.example.cube.service.PayoutService;
 import com.example.cube.service.StripeConnectService;
 import com.example.cube.service.StripePaymentService;
@@ -37,6 +38,7 @@ public class StripeController {
     private final PayoutService payoutService;
     private final AuthenticationService authenticationService;
     private final UserDetailsRepository userDetailsRepository;
+    private final BankAccountService bankAccountService;
 
     @Value("${stripe.api.key}")
     private String stripeApiKey;
@@ -47,12 +49,14 @@ public class StripeController {
             StripeConnectService stripeConnectService,
             PayoutService payoutService,
             AuthenticationService authenticationService,
-            UserDetailsRepository userDetailsRepository) {
+            UserDetailsRepository userDetailsRepository,
+            BankAccountService bankAccountService) {
         this.stripePaymentService = stripePaymentService;
         this.stripeConnectService = stripeConnectService;
         this.payoutService = payoutService;
         this.authenticationService = authenticationService;
         this.userDetailsRepository = userDetailsRepository;
+        this.bankAccountService = bankAccountService
     }
 
     // ==================== PAYMENT OPERATIONS ====================
@@ -236,6 +240,9 @@ public class StripeController {
             case "account.updated":
                 handleAccountUpdated(event);
                 break;
+            case "setup_intent.succeeded":
+                handleSetupIntentSucceeded(event);
+                break;
             default:
                 System.out.println("ℹ️ Unhandled event type: " + event.getType());
         }
@@ -295,4 +302,26 @@ public class StripeController {
             e.printStackTrace();
         }
     }
+
+    private void handleSetupIntentSucceeded(Event event) {
+        try {
+            System.out.println("🔍 Processing setup_intent.succeeded...");
+
+            com.stripe.model.StripeObject stripeObject = event.getData().getObject();
+            com.stripe.model.SetupIntent setupIntent = (com.stripe.model.SetupIntent) stripeObject;
+
+            String paymentMethodId = setupIntent.getPaymentMethod();
+            String userId = setupIntent.getMetadata().get("user_id");
+
+            if (userId != null && paymentMethodId != null) {
+                bankAccountService.saveBankAccountDetails(UUID.fromString(userId), paymentMethodId);
+                System.out.println("✅ Bank account linked via webhook");
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Error handling setup_intent.succeeded: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
 }

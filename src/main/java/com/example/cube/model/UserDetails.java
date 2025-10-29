@@ -29,13 +29,66 @@ public class UserDetails {
     @Column(name = "stripe_customer_id", unique = true)
     private String stripeCustomerId;
 
-    // Add after phonenumber field:
+    @Column(name = "stripe_payment_method_id")
+    private String stripePaymentMethodId; // The ACH payment method ID
+
+    @Column(name = "financial_connections_account_id")
+    private String financialConnectionsAccountId; // The linked bank account ID
+
+    @Column(name = "bank_account_verified")
+    private Boolean bankAccountVerified;
+
+    @Column(name = "bank_account_last4")
+    private String bankAccountLast4; // For display purposes
+
+    @Column(name = "bank_name")
+    private String bankName; // For display purposes
 
     @Column(name = "stripe_account_id", unique = true)
     private String stripeAccountId;
 
     @Column(name = "stripe_payouts_enabled")
     private Boolean stripePayoutsEnabled;
+
+    public String getStripePaymentMethodId() {
+        return stripePaymentMethodId;
+    }
+
+    public String getFinancialConnectionsAccountId() {
+        return financialConnectionsAccountId;
+    }
+
+    public Boolean getBankAccountVerified() {
+        return bankAccountVerified;
+    }
+
+    public String getBankAccountLast4() {
+        return bankAccountLast4;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setStripePaymentMethodId(String stripePaymentMethodId) {
+        this.stripePaymentMethodId = stripePaymentMethodId;
+    }
+
+    public void setFinancialConnectionsAccountId(String financialConnectionsAccountId) {
+        this.financialConnectionsAccountId = financialConnectionsAccountId;
+    }
+
+    public void setBankAccountVerified(Boolean bankAccountVerified) {
+        this.bankAccountVerified = bankAccountVerified;
+    }
+
+    public void setBankAccountLast4(String bankAccountLast4) {
+        this.bankAccountLast4 = bankAccountLast4;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
+    }
 
     public void setStripePayoutsEnabled(Boolean stripePayoutsEnabled) {
         this.stripePayoutsEnabled = stripePayoutsEnabled;
