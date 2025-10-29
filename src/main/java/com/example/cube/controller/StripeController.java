@@ -56,7 +56,7 @@ public class StripeController {
         this.payoutService = payoutService;
         this.authenticationService = authenticationService;
         this.userDetailsRepository = userDetailsRepository;
-        this.bankAccountService = bankAccountService
+        this.bankAccountService = bankAccountService;
     }
 
     // ==================== PAYMENT OPERATIONS ====================
