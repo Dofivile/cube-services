@@ -40,6 +40,9 @@ public class StripePaymentServiceImpl implements StripePaymentService {
     @Autowired
     private PaymentTransactionRepository paymentTransactionRepository;
 
+    @Autowired
+    private UserDetailsRepository userDetailsRepositoryRepository;
+
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeApiKey;
@@ -49,41 +52,32 @@ public class StripePaymentServiceImpl implements StripePaymentService {
     @Transactional
     public PaymentIntentResponse createPaymentIntent(UUID userId, UUID cubeId, UUID memberId, Integer cycleNumber) {
 
-        // 1. Get and validate cube
-        Cube cube = cubeRepository.findById(cubeId).orElseThrow(() -> new RuntimeException("Cube not found"));
-        // 2. Get and validate member
-        CubeMember member = cubeMemberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("Member not found"));
+        Cube cube = cubeRepository.findById(cubeId)
+                .orElseThrow(() -> new RuntimeException("Cube not found"));
+        CubeMember member = cubeMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
 
-        // 3. Validate that member belongs to this cube and user
-        if (!member.getCubeId().equals(cubeId)) {
-            throw new RuntimeException("Member does not belong to this cube");
-        }
-        if (!member.getUserId().equals(userId)) {
-            throw new RuntimeException("User ID does not match member");
-        }
-
-        // 4. Validate cycle number
-        if (!cycleNumber.equals(cube.getCurrentCycle())) {
+        if (!member.getCubeId().equals(cubeId)) throw new RuntimeException("Member does not belong to this cube");
+        if (!member.getUserId().equals(userId)) throw new RuntimeException("User ID does not match member");
+        if (!cycleNumber.equals(cube.getCurrentCycle()))
             throw new RuntimeException("Invalid cycle number. Current cycle is: " + cube.getCurrentCycle());
-        }
 
-        // 5. Check if already paid for this cycle
         boolean alreadyPaid = paymentTransactionRepository
                 .existsByCubeIdAndMemberIdAndCycleNumberAndTypeIdAndStatusId(
                         cubeId, memberId, cycleNumber, 1, 2);
 
-        if (alreadyPaid) {
-            throw new RuntimeException("Payment already recorded for this cycle");
-        }
+        if (alreadyPaid) throw new RuntimeException("Payment already recorded for this cycle");
 
-        // 6. Get or create Stripe customer
         String customerId = getOrCreateCustomer(userId);
 
-        // 7. Calculate amount (convert to cents)
+        // Fetch user's saved payment method
+        String paymentMethodId = userDetailsRepository.findById(userId)
+                .map(UserDetails::getStripePaymentMethodId)
+                .orElseThrow(() -> new RuntimeException("No bank account found for user"));
+
         BigDecimal amountInDollars = cube.getAmountPerCycle();
         long amountInCents = amountInDollars.multiply(new BigDecimal("100")).longValue();
 
-        // 8. Create Payment Intent
         try {
             Map<String, String> metadata = new HashMap<>();
             metadata.put("user_id", userId.toString());
@@ -91,36 +85,12 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             metadata.put("member_id", memberId.toString());
             metadata.put("cycle_number", cycleNumber.toString());
 
-
-
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(amountInCents)
                     .setCurrency("usd")
                     .setCustomer(customerId)
-                    // NEW: Specify ACH payment method
-                    .addPaymentMethodType("us_bank_account")
-                    // NEW: Configure Financial Connections
-                    .setPaymentMethodOptions(
-                            PaymentIntentCreateParams.PaymentMethodOptions.builder()
-                                    .setUsBankAccount(
-                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount.builder()
-                                                    .setFinancialConnections(
-                                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount
-                                                                    .FinancialConnections.builder()
-                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
-                                                                            .UsBankAccount.FinancialConnections.Permission.PAYMENT_METHOD)
-                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
-                                                                            .UsBankAccount.FinancialConnections.Permission.BALANCES)
-                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
-                                                                            .UsBankAccount.FinancialConnections.Permission.OWNERSHIP)
-                                                                    .build()
-                                                    )
-                                                    .setVerificationMethod(PaymentIntentCreateParams.PaymentMethodOptions
-                                                            .UsBankAccount.VerificationMethod.INSTANT) // Use Financial Connections only
-                                                    .build()
-                                    )
-                                    .build()
-                    )
+                    .setPaymentMethod(paymentMethodId)
+                    .setConfirm(true)
                     .setConfirmationMethod(PaymentIntentCreateParams.ConfirmationMethod.AUTOMATIC)
                     .putAllMetadata(metadata)
                     .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
@@ -138,6 +108,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             throw new RuntimeException("Failed to create payment intent: " + e.getMessage());
         }
     }
+
 
     @Override
     @Transactional
