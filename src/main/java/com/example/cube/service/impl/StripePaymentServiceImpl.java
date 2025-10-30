@@ -70,10 +70,6 @@ public class StripePaymentServiceImpl implements StripePaymentService {
 
         String customerId = getOrCreateCustomer(userId);
 
-        String paymentMethodId = userDetailsRepository.findById(userId)
-                .map(UserDetails::getStripePaymentMethodId)
-                .orElseThrow(() -> new RuntimeException("No bank account found for user"));
-
         BigDecimal amountInDollars = cube.getAmountPerCycle();
         long amountInCents = amountInDollars.multiply(new BigDecimal("100")).longValue();
 
@@ -88,9 +84,14 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     .setAmount(amountInCents)
                     .setCurrency("usd")
                     .setCustomer(customerId)
-                    .setPaymentMethod(paymentMethodId)
-                    .setConfirm(true)
-                    .setConfirmationMethod(PaymentIntentCreateParams.ConfirmationMethod.AUTOMATIC)
+                    .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                    .setEnabled(true)
+                                    .setAllowRedirects(
+                                            PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER
+                                    )
+                                    .build()
+                    )
                     .putAllMetadata(metadata)
                     .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
                     .build();
@@ -107,7 +108,6 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             throw new RuntimeException("Failed to create payment intent: " + e.getMessage());
         }
     }
-
 
 
     @Override
