@@ -6,8 +6,10 @@ import com.example.cube.repository.UserDetailsRepository;
 import com.example.cube.service.BankAccountService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Customer;
 import com.stripe.model.PaymentMethod;
 import com.stripe.model.SetupIntent;
+import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.PaymentMethodAttachParams;
 import com.stripe.param.SetupIntentCreateParams;
 import jakarta.annotation.PostConstruct;
@@ -92,6 +94,18 @@ public class BankAccountServiceImpl implements BankAccountService {
                             .setCustomer(user.getStripeCustomerId())
                             .build()
             );
+
+            Customer customer = Customer.retrieve(user.getStripeCustomerId());
+            System.out.println("✅ customer: " + customer);
+            CustomerUpdateParams params = CustomerUpdateParams.builder()
+                    .setInvoiceSettings(
+                            CustomerUpdateParams.InvoiceSettings.builder()
+                                    .setDefaultPaymentMethod(paymentMethodId)
+                                    .build()
+                    )
+                    .build();
+            customer.update(params);
+
             // Get Financial Connections account ID
             String fcAccountId = paymentMethod.getUsBankAccount().getFinancialConnectionsAccount();
 
