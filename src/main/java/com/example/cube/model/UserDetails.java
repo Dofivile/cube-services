@@ -38,12 +38,6 @@ public class UserDetails {
     @Column(name = "bank_account_verified")
     private Boolean bankAccountVerified;
 
-    @Column(name = "bank_account_last4")
-    private String bankAccountLast4; // For display purposes
-
-    @Column(name = "bank_name")
-    private String bankName; // For display purposes
-
     @Column(name = "stripe_account_id", unique = true)
     private String stripeAccountId;
 
@@ -62,13 +56,6 @@ public class UserDetails {
         return bankAccountVerified;
     }
 
-    public String getBankAccountLast4() {
-        return bankAccountLast4;
-    }
-
-    public String getBankName() {
-        return bankName;
-    }
 
     public void setStripePaymentMethodId(String stripePaymentMethodId) {
         this.stripePaymentMethodId = stripePaymentMethodId;
@@ -82,13 +69,6 @@ public class UserDetails {
         this.bankAccountVerified = bankAccountVerified;
     }
 
-    public void setBankAccountLast4(String bankAccountLast4) {
-        this.bankAccountLast4 = bankAccountLast4;
-    }
-
-    public void setBankName(String bankName) {
-        this.bankName = bankName;
-    }
 
     public void setStripePayoutsEnabled(Boolean stripePayoutsEnabled) {
         this.stripePayoutsEnabled = stripePayoutsEnabled;
