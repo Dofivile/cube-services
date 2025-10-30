@@ -70,6 +70,16 @@ public class StripePaymentServiceImpl implements StripePaymentService {
 
         String customerId = getOrCreateCustomer(userId);
 
+        // NEW: Get the saved payment method from user record
+        UserDetails user = userDetailsRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String paymentMethodId = user.getStripePaymentMethodId();
+
+        if (paymentMethodId == null) {
+            throw new RuntimeException("No bank account linked. Please link a bank account first.");
+        }
+
         BigDecimal amountInDollars = cube.getAmountPerCycle();
         long amountInCents = amountInDollars.multiply(new BigDecimal("100")).longValue();
 
@@ -84,14 +94,30 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     .setAmount(amountInCents)
                     .setCurrency("usd")
                     .setCustomer(customerId)
-                    .setAutomaticPaymentMethods(
-                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                    .setEnabled(true)
-                                    .setAllowRedirects(
-                                            PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER
+                    .setPaymentMethod(paymentMethodId)  // NEW: Use the saved payment method
+                    .addPaymentMethodType("us_bank_account")  // NEW: Specify ACH
+                    .setPaymentMethodOptions(  // NEW: ACH configuration
+                            PaymentIntentCreateParams.PaymentMethodOptions.builder()
+                                    .setUsBankAccount(
+                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount.builder()
+                                                    .setFinancialConnections(
+                                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount
+                                                                    .FinancialConnections.builder()
+                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
+                                                                            .UsBankAccount.FinancialConnections.Permission.PAYMENT_METHOD)
+                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
+                                                                            .UsBankAccount.FinancialConnections.Permission.BALANCES)
+                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
+                                                                            .UsBankAccount.FinancialConnections.Permission.OWNERSHIP)
+                                                                    .build()
+                                                    )
+                                                    .setVerificationMethod(PaymentIntentCreateParams.PaymentMethodOptions
+                                                            .UsBankAccount.VerificationMethod.INSTANT)
+                                                    .build()
                                     )
                                     .build()
                     )
+                    .setConfirmationMethod(PaymentIntentCreateParams.ConfirmationMethod.AUTOMATIC)
                     .putAllMetadata(metadata)
                     .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
                     .build();
