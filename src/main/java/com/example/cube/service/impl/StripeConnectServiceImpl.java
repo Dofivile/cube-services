@@ -61,9 +61,17 @@ public class StripeConnectServiceImpl implements StripeConnectService {
                                     .build())
                             .build())
                     .setBusinessProfile(AccountCreateParams.BusinessProfile.builder()
-                            .setProductDescription("Personal saving participant on Cube")
+                            .setMcc("6012")  // Financial institution - member-owned
+                            .setProductDescription("Personal savings pool participant")
+                            .setUrl(null)  // No website required
                             .build())
-                    .setIndividual(AccountCreateParams.Individual.builder().build())
+                    .setSettings(AccountCreateParams.Settings.builder()
+                            .setPayouts(AccountCreateParams.Settings.Payouts.builder()
+                                    .setSchedule(AccountCreateParams.Settings.Payouts.Schedule.builder()
+                                            .setInterval(AccountCreateParams.Settings.Payouts.Schedule.Interval.MANUAL)
+                                            .build())
+                                    .build())
+                            .build())
                     .putMetadata("user_id", userId.toString())
                     .build();
 
@@ -72,7 +80,7 @@ public class StripeConnectServiceImpl implements StripeConnectService {
             // Save account ID to database
             user.setStripeAccountId(account.getId());
 
-            // ✨ NEW: Also create a Stripe Customer for making payments
+            // ✨ Also create a Stripe Customer for making payments
             if (user.getStripeCustomerId() == null) {
                 CustomerCreateParams customerParams = CustomerCreateParams.builder()
                         .putMetadata("user_id", userId.toString())
@@ -124,7 +132,6 @@ public class StripeConnectServiceImpl implements StripeConnectService {
         }
     }
 
-    // Helper method to generate onboarding link
     private String generateAccountLink(String accountId) {
         try {
             AccountLinkCreateParams params = AccountLinkCreateParams.builder()
@@ -132,6 +139,7 @@ public class StripeConnectServiceImpl implements StripeConnectService {
                     .setRefreshUrl(frontendUrl + "/onboarding/refresh")
                     .setReturnUrl(frontendUrl + "/onboarding/complete")
                     .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
+                    .setCollect(AccountLinkCreateParams.Collect.EVENTUALLY_DUE)
                     .build();
 
             AccountLink accountLink = AccountLink.create(params);
