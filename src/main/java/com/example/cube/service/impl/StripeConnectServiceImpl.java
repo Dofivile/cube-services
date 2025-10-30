@@ -7,8 +7,10 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Account;
 import com.stripe.model.AccountLink;
+import com.stripe.model.Customer;
 import com.stripe.param.AccountCreateParams;
 import com.stripe.param.AccountLinkCreateParams;
+import com.stripe.param.CustomerCreateParams;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,32 +54,16 @@ public class StripeConnectServiceImpl implements StripeConnectService {
             AccountCreateParams params = AccountCreateParams.builder()
                     .setType(AccountCreateParams.Type.EXPRESS)
                     .setCountry("US")
-                    .setCapabilities(
-                            AccountCreateParams.Capabilities.builder()
-                                    .setCardPayments(
-                                            AccountCreateParams.Capabilities.CardPayments.builder()
-                                                    .setRequested(true)
-                                                    .build()
-                                    )
-                                    .setTransfers(
-                                            AccountCreateParams.Capabilities.Transfers.builder()
-                                                    .setRequested(true)
-                                                    .build()
-                                    )
-                                    .build()
-                    )
                     .setBusinessType(AccountCreateParams.BusinessType.INDIVIDUAL)
-                    .setBusinessProfile(
-                            AccountCreateParams.BusinessProfile.builder()
-                                    .setMcc("5734") // Computer software stores (valid code)
-                                    .setUrl("https://cubeapp.vercel.app")
-                                    .setProductDescription("Cube rotating savings participant")
-                                    .build()
-                    )
-                    .setIndividual(
-                            AccountCreateParams.Individual.builder()
-                                    .build()
-                    )
+                    .setCapabilities(AccountCreateParams.Capabilities.builder()
+                            .setTransfers(AccountCreateParams.Capabilities.Transfers.builder()
+                                    .setRequested(true)
+                                    .build())
+                            .build())
+                    .setBusinessProfile(AccountCreateParams.BusinessProfile.builder()
+                            .setProductDescription("Personal saving participant on Cube")
+                            .build())
+                    .setIndividual(AccountCreateParams.Individual.builder().build())
                     .putMetadata("user_id", userId.toString())
                     .build();
 
@@ -85,6 +71,18 @@ public class StripeConnectServiceImpl implements StripeConnectService {
 
             // Save account ID to database
             user.setStripeAccountId(account.getId());
+
+            // ✨ NEW: Also create a Stripe Customer for making payments
+            if (user.getStripeCustomerId() == null) {
+                CustomerCreateParams customerParams = CustomerCreateParams.builder()
+                        .putMetadata("user_id", userId.toString())
+                        .build();
+
+                Customer customer = Customer.create(customerParams);
+                user.setStripeCustomerId(customer.getId());
+                System.out.println("✅ Created Stripe customer: " + customer.getId());
+            }
+
             userDetailsRepository.save(user);
 
             System.out.println("✅ Created Stripe Connect account: " + account.getId());
