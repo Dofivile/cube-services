@@ -10,7 +10,7 @@ import java.util.UUID;
 public interface CycleService {
 
     // Start a cube (transition from draft/pending to active)
-    Cube startCube(UUID cubeId, UUID userId);
+    Cube startCube(UUID cubeId, UUID memberId, UUID userId);
 
     // Process current cycle (collect payments, select winner, payout)
     CycleProcessDTO processCycle(UUID cubeId);

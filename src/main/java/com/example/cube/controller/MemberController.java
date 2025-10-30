@@ -44,7 +44,6 @@ public class MemberController {
     @PostMapping("/invite")
     public ResponseEntity<InviteMembersResponse> inviteMembers(@Valid @RequestBody InviteMembersRequest request,
                                                                @RequestHeader("Authorization") String authHeader) {
-
         UUID invitedBy = authenticationService.validateAndExtractUserId(authHeader);
         UUID cubeId = request.getCubeId();
 

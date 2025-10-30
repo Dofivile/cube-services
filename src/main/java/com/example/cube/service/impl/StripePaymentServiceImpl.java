@@ -186,13 +186,16 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     .countByCubeIdAndCycleNumberAndTypeIdAndStatusId(
                             cubeId, cycleNumber, 1, 2);
 
-            // If all paid and this is cycle 1, activate the cube
-            if (paidMembers >= totalMembers && cycleNumber == 1 && cube.getStatusId() == 4) {
+            // CHANGED: Only auto-activate for cycles AFTER cycle 1
+            // Cycle 1 requires manual start by admin
+            if (paidMembers >= totalMembers && cycleNumber > 1) {
+                // Auto-activate for subsequent cycles
                 cube.setStatusId(2);  // Set to active
-                // Set start date if not set (MVP: start when payments for cycle 1 settle)
+
                 if (cube.getStartDate() == null) {
                     cube.setStartDate(java.time.Instant.now());
                 }
+
                 // Compute next payout date based on duration/current cycle
                 if (cube.getDuration() != null && cube.getStartDate() != null) {
                     String durationName = cube.getDuration().getDurationName();
@@ -208,6 +211,12 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     }
                     cube.setNextPayoutDate(next);
                 }
+            }
+
+            // NEW: For cycle 1, just log that all payments are ready
+            if (paidMembers >= totalMembers && cycleNumber == 1) {
+                System.out.println("✅ All members have paid for cycle 1. Cube " + cube.getName() + " is ready to start!");
+                System.out.println("   Admin can now call /api/cubes/start to activate the cube.");
             }
 
             cubeRepository.save(cube);

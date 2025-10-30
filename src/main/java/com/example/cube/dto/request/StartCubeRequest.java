@@ -6,24 +6,24 @@ import java.util.UUID;
 
 public class StartCubeRequest {
     @NotNull
-    private UUID user_id;
+    private UUID memberId;
 
     @NotNull
     private UUID cubeId;
 
-    public void setUser_id(UUID user_id) {
-        this.user_id = user_id;
+    public UUID getMemberId() {
+        return memberId;
     }
 
-    public void setCubeId(UUID cubeId) {
-        this.cubeId = cubeId;
+    public void setMemberId(UUID memberId) {
+        this.memberId = memberId;
     }
 
     public UUID getCubeId() {
         return cubeId;
     }
 
-    public UUID getUser_id() {
-        return user_id;
+    public void setCubeId(UUID cubeId) {
+        this.cubeId = cubeId;
     }
 }

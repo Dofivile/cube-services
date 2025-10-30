@@ -3,6 +3,7 @@ package com.example.cube.controller;
 import com.example.cube.dto.request.CreateCubeRequest;
 import com.example.cube.dto.request.GetCubeRequest;
 import com.example.cube.dto.request.GetUserCubesRequest;
+import com.example.cube.dto.request.StartCubeRequest;
 import com.example.cube.dto.response.CreateCubeResponse;
 import com.example.cube.dto.response.GetCubeResponse;
 import com.example.cube.dto.response.GetUserCubesResponse;
@@ -10,12 +11,15 @@ import com.example.cube.mapper.CubeMapper;
 import com.example.cube.model.Cube;
 import com.example.cube.security.AuthenticationService;
 import com.example.cube.service.CubeService;
+import com.example.cube.service.CycleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -29,12 +33,14 @@ public class CubeController {
     private final CubeService cubeService;
     private final CubeMapper cubeMapper;
     private final AuthenticationService authenticationService;
+    private final CycleService cycleService;
 
     @Autowired
-    public CubeController(CubeService cubeService, CubeMapper cubeMapper, AuthenticationService authenticationService) {
+    public CubeController(CubeService cubeService, CubeMapper cubeMapper, AuthenticationService authenticationService, CycleService cycleService) {
         this.cubeService = cubeService;
         this.cubeMapper = cubeMapper;
         this.authenticationService = authenticationService;
+        this.cycleService = cycleService;
     }
 
     @PostMapping("/create")
@@ -78,5 +84,29 @@ public class CubeController {
         GetCubeResponse response = cubeMapper.toGetCubeResponse(cube);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/start")
+    public ResponseEntity<Map<String, String>> startCube(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody StartCubeRequest request) {
+
+        // Validate and extract user ID from JWT token
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+
+        try {
+            // Start the cube (cycle 1 only)
+            cycleService.startCube(request.getCubeId(), request.getMemberId(), userId);
+
+            // Return simple success message
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Cube started successfully!");
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 }
