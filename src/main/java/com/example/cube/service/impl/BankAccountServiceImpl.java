@@ -94,14 +94,11 @@ public class BankAccountServiceImpl implements BankAccountService {
             user.setStripePaymentMethodId(paymentMethodId);
             user.setFinancialConnectionsAccountId(fcAccountId);
             user.setBankAccountVerified(true);
-            user.setBankAccountLast4(paymentMethod.getUsBankAccount().getLast4());
-            user.setBankName(paymentMethod.getUsBankAccount().getBankName());
 
             userDetailsRepository.save(user);
 
             System.out.println("✅ Bank account linked for user: " + userId);
             System.out.println("   Payment Method: " + paymentMethodId);
-            System.out.println("   Bank: " + user.getBankName() + " ****" + user.getBankAccountLast4());
 
         } catch (StripeException e) {
             throw new RuntimeException("Failed to retrieve payment method: " + e.getMessage());
