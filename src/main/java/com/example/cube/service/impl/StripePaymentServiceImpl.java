@@ -91,12 +91,6 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     .setPaymentMethod(paymentMethodId)
                     .setConfirm(true)
                     .setConfirmationMethod(PaymentIntentCreateParams.ConfirmationMethod.AUTOMATIC)
-                    .setAutomaticPaymentMethods(
-                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                    .setEnabled(true)
-                                    .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
-                                    .build()
-                    )
                     .putAllMetadata(metadata)
                     .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
                     .build();
