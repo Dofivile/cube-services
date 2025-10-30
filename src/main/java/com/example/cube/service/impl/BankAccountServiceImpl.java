@@ -8,6 +8,7 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentMethod;
 import com.stripe.model.SetupIntent;
+import com.stripe.param.PaymentMethodAttachParams;
 import com.stripe.param.SetupIntentCreateParams;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,7 +87,11 @@ public class BankAccountServiceImpl implements BankAccountService {
 
         try {
             PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodId);
-
+            paymentMethod.attach(
+                    PaymentMethodAttachParams.builder()
+                            .setCustomer(user.getStripeCustomerId())
+                            .build()
+            );
             // Get Financial Connections account ID
             String fcAccountId = paymentMethod.getUsBankAccount().getFinancialConnectionsAccount();
 
