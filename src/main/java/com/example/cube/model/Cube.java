@@ -55,10 +55,10 @@ public class Cube {
     @Column(name = "rotation_id")
     private Integer rotationId;
 
-    @Column(name = "start_date", nullable = false)
+    @Column(name = "start_date")
     private Instant startDate;
 
-    @Column(name = "end_date", nullable = false)
+    @Column(name = "end_date")
     private Instant endDate;
 
     public UUID getCubeId() { return cubeId;}

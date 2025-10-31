@@ -5,9 +5,11 @@ import com.example.cube.dto.response.CycleStatusDTO;
 import com.example.cube.dto.response.MemberPayoutStatus;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeMember;
+import com.example.cube.model.CycleWinner;
 import com.example.cube.model.PaymentTransaction;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.repository.CubeRepository;
+import com.example.cube.repository.CycleWinnerRepository;
 import com.example.cube.repository.PaymentTransactionRepository;
 import com.example.cube.service.CycleService;
 import com.example.cube.service.PayoutService;
@@ -32,17 +34,17 @@ public class CycleServiceImpl implements CycleService {
     private final CubeRepository cubeRepository;
     private final CubeMemberRepository cubeMemberRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
-    private final PayoutService payoutService;
+    private final CycleWinnerRepository cycleWinnerRepository;
 
     @Autowired
     public CycleServiceImpl(CubeRepository cubeRepository,
                             CubeMemberRepository cubeMemberRepository,
                             PaymentTransactionRepository paymentTransactionRepository,
-                            PayoutService payoutService) {
+                            CycleWinnerRepository cycleWinnerRepository) {
         this.cubeRepository = cubeRepository;
         this.cubeMemberRepository = cubeMemberRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
-        this.payoutService = payoutService;
+        this.cycleWinnerRepository = cycleWinnerRepository;
     }
 
     @Override
@@ -113,12 +115,13 @@ public class CycleServiceImpl implements CycleService {
 
     @Override
     @Transactional
-    public CycleProcessDTO processCycle(UUID cubeId) {
+    public void processCycle(UUID cubeId) {
 
+        // 1. Get cube
         Cube cube = cubeRepository.findById(cubeId)
                 .orElseThrow(() -> new RuntimeException("Cube not found"));
 
-        // Time-gate: only process when payout time has been reached
+        // 2. Validate timing
         Instant now = Instant.now();
         if (cube.getNextPayoutDate() != null && now.isBefore(cube.getNextPayoutDate())) {
             throw new RuntimeException("Not time for payout yet. Next payout at: " + cube.getNextPayoutDate());
@@ -126,93 +129,55 @@ public class CycleServiceImpl implements CycleService {
 
         int currentCycle = cube.getCurrentCycle();
 
-        // Check if cube is active
+        // 3. Check if cube is active
         if (cube.getStatusId() != 2) {
             throw new RuntimeException("Cube must be active to process cycle. Current status: " + cube.getStatusId());
         }
 
-        // 1. Get all members (payments already recorded via recordMemberPayment)
-        List<CubeMember> allMembers = cubeMemberRepository.findByCubeId(cubeId);
+        // 4. Check if winner already selected for this cycle
+        if (cycleWinnerRepository.existsByCubeIdAndCycleNumber(cubeId, currentCycle)) {
+            throw new RuntimeException("Winner already selected for cycle " + currentCycle);
+        }
 
-        // 2. Select random winner from unpaid members
+        // 5. Get unpaid members
         List<CubeMember> unpaidMembers = cubeMemberRepository
                 .findByCubeIdAndHasReceivedPayout(cubeId, false);
 
-        // FIXED: Handle the case where all members have already been paid
+        // Handle case where all members have been paid
         if (unpaidMembers.isEmpty()) {
             System.out.println("⚠️ Cube " + cubeId + " has all members paid. Marking as completed.");
 
-            // Mark cube as completed if not already
-            if (cube.getStatusId() == 2) {
-                cube.setStatusId(3);  // completed
-                cube.setEndDate(Instant.now());
-                cube.setNextPayoutDate(null);
-                cubeRepository.save(cube);
-            }
-
-            // Return a response indicating completion
-            CycleProcessDTO response = new CycleProcessDTO();
-            response.setCycle(currentCycle);
-            response.setWinnerUserId(null);
-            response.setPayoutAmount(BigDecimal.ZERO);
-            response.setRemainingMembers(0);
-            response.setIsComplete(true);
-            return response;
-        }
-
-        SecureRandom random = new SecureRandom();
-        CubeMember winner = unpaidMembers.get(random.nextInt(unpaidMembers.size()));
-
-        // 3. Calculate and process payout
-        BigDecimal payoutAmount = cube.getAmountPerCycle()
-                .multiply(BigDecimal.valueOf(cube.getNumberofmembers()));
-
-        // Create payout transaction
-        PaymentTransaction payoutTx = new PaymentTransaction();
-        payoutTx.setCubeId(cubeId);
-        payoutTx.setUserId(winner.getUserId());
-        payoutTx.setMemberId(winner.getMemberId());
-        payoutTx.setTypeId(2);  // payout
-        payoutTx.setStatusId(2);  // completed
-        payoutTx.setAmount(payoutAmount);
-        payoutTx.setCycleNumber(currentCycle);
-        payoutTx.setCreatedAt(LocalDateTime.now());
-        payoutTx.setProcessedAt(LocalDateTime.now());
-        paymentTransactionRepository.save(payoutTx);
-
-        // Funds movement handled via Stripe Transfer/Payout (no local bank withdrawal)
-
-        // Mark winner as paid
-        winner.setHasReceivedPayout(true);
-        winner.setPayoutDate(LocalDateTime.now());
-        winner.setPayoutPosition(currentCycle);
-        cubeMemberRepository.save(winner);
-
-        // 4. Check if cube is complete
-        boolean isComplete = unpaidMembers.size() == 1;  // This was the last one
-
-        if (isComplete) {
             cube.setStatusId(3);  // completed
             cube.setEndDate(Instant.now());
             cube.setNextPayoutDate(null);
-            System.out.println("✅ Cube " + cubeId + " completed! All members have received payouts.");
-        } else {
-            // Advance to next cycle
-            cube.setCurrentCycle(currentCycle + 1);
-            cube.setNextPayoutDate(calculateNextPayoutDate(cube));
+            cubeRepository.save(cube);
+            return;
         }
 
-        cubeRepository.save(cube);
+        // 6. Select random winner
+        SecureRandom random = new SecureRandom();
+        CubeMember winner = unpaidMembers.get(random.nextInt(unpaidMembers.size()));
 
-        // 5. Build response
-        CycleProcessDTO response = new CycleProcessDTO();
-        response.setCycle(currentCycle);
-        response.setWinnerUserId(winner.getUserId());
-        response.setPayoutAmount(payoutAmount);
-        response.setRemainingMembers(unpaidMembers.size() - 1);
-        response.setIsComplete(isComplete);
+        // 7. Calculate payout amount
+        BigDecimal payoutAmount = cube.getAmountPerCycle()
+                .multiply(BigDecimal.valueOf(cube.getNumberofmembers()));
 
-        return response;
+        // 8. Record winner in cycle_winners table
+        CycleWinner cycleWinner = new CycleWinner();
+        cycleWinner.setCubeId(cubeId);
+        cycleWinner.setMemberId(winner.getMemberId());
+        cycleWinner.setUserId(winner.getUserId());
+        cycleWinner.setCycleNumber(currentCycle);
+        cycleWinner.setPayoutAmount(payoutAmount);
+        cycleWinner.setSelectedAt(LocalDateTime.now());
+        cycleWinner.setPayoutSent(false);
+
+        cycleWinnerRepository.save(cycleWinner);
+
+        System.out.println("✅ Winner selected for cycle " + currentCycle);
+        System.out.println("   Cube: " + cubeId);
+        System.out.println("   Winner: " + winner.getUserId());
+        System.out.println("   Amount: $" + payoutAmount);
     }
 
     private Instant calculateNextPayoutDate(Cube cube) {

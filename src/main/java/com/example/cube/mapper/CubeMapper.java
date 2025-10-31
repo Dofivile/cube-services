@@ -25,8 +25,6 @@ public class CubeMapper {
         cube.setUser_id(dto.getUser_id());
         cube.setAmountPerCycle(dto.getAmountPerCycle());
         cube.setNumberofmembers(dto.getNumberofmembers());
-        cube.setStartDate(dto.getStartDate());
-        cube.setEndDate(dto.getEndDate());
         cube.setCurrency(dto.getCurrency());
         cube.setDuration(duration);
         return cube;

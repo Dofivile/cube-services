@@ -135,7 +135,6 @@ public class StripePaymentServiceImpl implements StripePaymentService {
         }
     }
 
-
     @Override
     @Transactional
     public void handlePaymentIntentSucceeded(String paymentIntentId) {
@@ -143,22 +142,34 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             // Retrieve the payment intent from Stripe
             PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
 
-            // Extract metadata
+            // Check if transaction already recorded
+            if (paymentTransactionRepository.existsByStripePaymentIntentId(paymentIntentId)) {
+                System.out.println("⚠️ Payment already processed: " + paymentIntentId);
+                return;
+            }
+
+            // Extract and validate metadata
             Map<String, String> metadata = paymentIntent.getMetadata();
+
+            if (metadata == null || metadata.isEmpty()) {
+                System.err.println("❌ PaymentIntent " + paymentIntentId + " has no metadata");
+                return;
+            }
+
+            // Validate and parse metadata
+            if (!hasRequiredMetadata(metadata)) {
+                System.err.println("❌ Missing required metadata in " + paymentIntentId);
+                return;
+            }
+
             UUID userId = UUID.fromString(metadata.get("user_id"));
             UUID cubeId = UUID.fromString(metadata.get("cube_id"));
             UUID memberId = UUID.fromString(metadata.get("member_id"));
             Integer cycleNumber = Integer.parseInt(metadata.get("cycle_number"));
 
-            // Check if transaction already recorded
-            if (paymentTransactionRepository.existsByStripePaymentIntentId(paymentIntentId)) {
-                System.out.println("Payment already processed: " + paymentIntentId);
-                return;
-            }
-
             // Get cube
             Cube cube = cubeRepository.findById(cubeId)
-                    .orElseThrow(() -> new RuntimeException("Cube not found"));
+                    .orElseThrow(() -> new RuntimeException("Cube not found: " + cubeId));
 
             // Create payment transaction record
             PaymentTransaction transaction = new PaymentTransaction();
@@ -179,56 +190,24 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             cube.setTotalAmountCollected(
                     cube.getTotalAmountCollected().add(transaction.getAmount())
             );
-
-            // Check if all members have paid
-            long totalMembers = cubeMemberRepository.countByCubeId(cubeId);
-            long paidMembers = paymentTransactionRepository
-                    .countByCubeIdAndCycleNumberAndTypeIdAndStatusId(
-                            cubeId, cycleNumber, 1, 2);
-
-            // CHANGED: Only auto-activate for cycles AFTER cycle 1
-            // Cycle 1 requires manual start by admin
-            if (paidMembers >= totalMembers && cycleNumber > 1) {
-                // Auto-activate for subsequent cycles
-                cube.setStatusId(2);  // Set to active
-
-                if (cube.getStartDate() == null) {
-                    cube.setStartDate(java.time.Instant.now());
-                }
-
-                // Compute next payout date based on duration/current cycle
-                if (cube.getDuration() != null && cube.getStartDate() != null) {
-                    String durationName = cube.getDuration().getDurationName();
-                    int durationDays = cube.getDuration().getDurationDays();
-                    int current = cube.getCurrentCycle() != null ? cube.getCurrentCycle() : 1;
-                    java.time.Instant next;
-                    if (durationName != null && durationName.equalsIgnoreCase("MINUTES")) {
-                        int minutes = 3 * current;
-                        next = cube.getStartDate().plus(java.time.Duration.ofMinutes(minutes));
-                    } else {
-                        long days = (long) durationDays * current;
-                        next = cube.getStartDate().plus(java.time.Duration.ofDays(days));
-                    }
-                    cube.setNextPayoutDate(next);
-                }
-            }
-
-            // NEW: For cycle 1, just log that all payments are ready
-            if (paidMembers >= totalMembers && cycleNumber == 1) {
-                System.out.println("✅ All members have paid for cycle 1. Cube " + cube.getName() + " is ready to start!");
-                System.out.println("   Admin can now call /api/cubes/start to activate the cube.");
-            }
-
             cubeRepository.save(cube);
 
-            System.out.println("✅ Payment processed: " + paymentIntentId +
+            System.out.println("✅ Payment recorded: " + paymentIntentId +
                     " | Cube: " + cube.getName() +
                     " | Amount: $" + transaction.getAmount() +
-                    " | Paid: " + paidMembers + "/" + totalMembers);
+                    " | Cycle: " + cycleNumber);
 
-        } catch (StripeException e) {
-            throw new RuntimeException("Failed to process payment intent: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("❌ Error processing payment: " + e.getMessage());
+            throw new RuntimeException("Failed to process payment: " + e.getMessage());
         }
+    }
+
+    private boolean hasRequiredMetadata(Map<String, String> metadata) {
+        return metadata.containsKey("user_id") &&
+                metadata.containsKey("cube_id") &&
+                metadata.containsKey("member_id") &&
+                metadata.containsKey("cycle_number");
     }
 
     private String getOrCreateCustomer(UUID userId) {

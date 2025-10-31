@@ -13,5 +13,5 @@ public interface CycleService {
     Cube startCube(UUID cubeId, UUID memberId, UUID userId);
 
     // Process current cycle (collect payments, select winner, payout)
-    CycleProcessDTO processCycle(UUID cubeId);
+    void processCycle(UUID cubeId);
 }

@@ -61,7 +61,7 @@ public class CubeServiceImpl implements CubeService {
     }
 
     private void validateCurrency(CreateCubeRequest req) {
-        // MVP: do not require start/end dates; they will be set when payments settle/activate
+        // Start/end dates are set automatically when cube starts
         String currency = req.getCurrency();
         if (currency == null || !currency.matches("[A-Z]{3}")) {
             throw new RuntimeException("currency must be a 3-letter uppercase code (e.g., USD)");

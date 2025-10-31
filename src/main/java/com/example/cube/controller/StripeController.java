@@ -12,6 +12,7 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Balance;
 import com.stripe.Stripe;
+import com.stripe.model.Charge;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
@@ -234,8 +235,14 @@ public class StripeController {
             case "payment_intent.succeeded":
                 handlePaymentIntentSucceeded(event);
                 break;
+            case "payment_intent.processing":
+                handlePaymentIntentProcessing(event);
+                break;
             case "payment_intent.payment_failed":
                 handlePaymentIntentFailed(event);
+                break;
+            case "charge.succeeded":
+                handleChargeSucceeded(event);
                 break;
             case "account.updated":
                 handleAccountUpdated(event);
@@ -320,6 +327,55 @@ public class StripeController {
 
         } catch (Exception e) {
             System.err.println("❌ Error handling setup_intent.succeeded: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void handleChargeSucceeded(Event event) {
+        try {
+            System.out.println("🔍 Processing charge.succeeded...");
+
+            com.stripe.model.StripeObject stripeObject = event.getData().getObject();
+            Charge charge = (Charge) stripeObject;
+
+            String chargeId = charge.getId();
+            String paymentIntentId = charge.getPaymentIntent();
+
+            System.out.println("  Charge ID: " + chargeId);
+            System.out.println("  Payment Intent: " + paymentIntentId);
+
+            if (paymentIntentId == null) {
+                System.out.println("⚠️ Charge has no PaymentIntent - skipping");
+                return;
+            }
+
+            // Reconcile via the PaymentIntent
+            stripePaymentService.handlePaymentIntentSucceeded(paymentIntentId);
+
+            System.out.println("✅ Charge reconciled via PaymentIntent: " + paymentIntentId);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error handling charge.succeeded: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void handlePaymentIntentProcessing(Event event) {
+        try {
+            System.out.println("🔍 Processing payment_intent.processing...");
+
+            com.stripe.model.StripeObject stripeObject = event.getData().getObject();
+            com.stripe.model.PaymentIntent paymentIntent = (com.stripe.model.PaymentIntent) stripeObject;
+
+            String paymentIntentId = paymentIntent.getId();
+            Long amount = paymentIntent.getAmount();
+
+            System.out.println("  Payment Intent ID: " + paymentIntentId);
+            System.out.println("  Amount: $" + (amount / 100.0));
+            System.out.println("  ⏳ ACH payment processing - will settle in 1-2 business days");
+
+        } catch (Exception e) {
+            System.err.println("❌ Error handling payment_intent.processing: " + e.getMessage());
             e.printStackTrace();
         }
     }

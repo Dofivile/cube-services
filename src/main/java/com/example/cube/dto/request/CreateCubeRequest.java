@@ -28,10 +28,6 @@ public class CreateCubeRequest {
     @NotNull
     @Positive
     private Integer numberofmembers;
-    @NotNull
-    private Instant startDate;
-    @NotNull
-    private Instant endDate;
     @NotBlank
     private String currency;
 
@@ -54,11 +50,6 @@ public class CreateCubeRequest {
     public Integer getNumberofmembers() { return numberofmembers; }
     public void setNumberofmembers(Integer numberofmembers) { this.numberofmembers = numberofmembers; }
 
-    public Instant getStartDate() { return startDate; }
-    public void setStartDate(Instant startDate) { this.startDate = startDate; }
-
-    public Instant getEndDate() { return endDate; }
-    public void setEndDate(Instant endDate) { this.endDate = endDate; }
 
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
