@@ -238,9 +238,6 @@ public class StripeController {
             case "payment_intent.payment_failed":
                 handlePaymentIntentFailed(event);
                 break;
-            case "charge.succeeded":
-                handleChargeSucceeded(event);
-                break;
             case "account.updated":
                 handleAccountUpdated(event);
                 break;
@@ -289,39 +286,6 @@ public class StripeController {
 
         } catch (Exception e) {
             System.err.println("❌ Error handling payment_intent.processing: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    private void handleChargeSucceeded(Event event) {
-        try {
-            System.out.println("🔍 Processing charge.succeeded (start)...");
-            System.out.println("  Event ID: " + event.getId());
-
-            var deserializer = event.getDataObjectDeserializer();
-            System.out.println("  Deserializer created: " + deserializer);
-            System.out.println("  Object present: " + !deserializer.getObject().isEmpty());
-
-            if (deserializer.getObject().isEmpty()) {
-                System.err.println("⚠️ Charge object is empty - deserialization failed!");
-                System.err.println("  Event data: " + event.getData());
-                return;
-            }
-
-            Charge charge = (Charge) deserializer.getObject().get();
-
-            System.out.println("🔍 Processing charge.succeeded...");
-            System.out.println("  Charge ID: " + charge.getId());
-            System.out.println("  Payment Intent: " + charge.getPaymentIntent());
-
-            if (charge.getPaymentIntent() != null) {
-                stripePaymentService.handlePaymentIntentSucceeded(charge.getPaymentIntent());
-            }
-
-            System.out.println("✅ Charge reconciled via PaymentIntent: " + charge.getPaymentIntent());
-
-        } catch (Exception e) {
-            System.err.println("❌ Error handling charge.succeeded: " + e.getMessage());
             e.printStackTrace();
         }
     }
