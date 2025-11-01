@@ -10,11 +10,8 @@ import com.example.cube.service.StripeConnectService;
 import com.example.cube.service.StripePaymentService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Balance;
+import com.stripe.model.*;
 import com.stripe.Stripe;
-import com.stripe.model.Charge;
-import com.stripe.model.Event;
-import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -257,25 +254,20 @@ public class StripeController {
         return ResponseEntity.ok("Success");
     }
 
-    // ==================== PRIVATE HELPER METHODS ====================
+    // ==================== PRIVATE HELPERS ====================
 
     private void handlePaymentIntentSucceeded(Event event) {
         try {
+            var deserializer = event.getDataObjectDeserializer();
+            if (deserializer.getObject().isEmpty()) return;
+            PaymentIntent paymentIntent = (PaymentIntent) deserializer.getObject().get();
+
             System.out.println("🔍 Processing payment_intent.succeeded...");
+            System.out.println("  Payment Intent ID: " + paymentIntent.getId());
+            System.out.println("  Status: " + paymentIntent.getStatus());
+            System.out.println("  Amount: " + paymentIntent.getAmount());
 
-            com.stripe.model.StripeObject stripeObject = event.getData().getObject();
-            PaymentIntent paymentIntent = (PaymentIntent) stripeObject;
-
-            String paymentIntentId = paymentIntent.getId();
-            String status = paymentIntent.getStatus();
-            Long amount = paymentIntent.getAmount();
-
-            System.out.println("  Payment Intent ID: " + paymentIntentId);
-            System.out.println("  Status: " + status);
-            System.out.println("  Amount: " + amount);
-
-            stripePaymentService.handlePaymentIntentSucceeded(paymentIntentId);
-
+            stripePaymentService.handlePaymentIntentSucceeded(paymentIntent.getId());
             System.out.println("✅ Payment intent processed successfully");
 
         } catch (Exception e) {
@@ -284,39 +276,52 @@ public class StripeController {
         }
     }
 
-    private void handlePaymentIntentFailed(Event event) {
-        System.out.println("❌ Payment failed: " + event.getId());
-        // TODO: Handle failed payments - notify user, update status
-    }
-
-    private void handleAccountUpdated(Event event) {
+    private void handlePaymentIntentProcessing(Event event) {
         try {
-            System.out.println("🔍 Processing account.updated...");
+            var deserializer = event.getDataObjectDeserializer();
+            if (deserializer.getObject().isEmpty()) return;
+            PaymentIntent paymentIntent = (PaymentIntent) deserializer.getObject().get();
 
-            com.stripe.model.StripeObject stripeObject = event.getData().getObject();
-            com.stripe.model.Account account = (com.stripe.model.Account) stripeObject;
-
-            String accountId = account.getId();
-            System.out.println("  Account ID: " + accountId);
-
-            // Update the account status in our database
-            stripeConnectService.updateAccountStatus(accountId);
-
-            System.out.println("✅ Account status updated successfully");
+            System.out.println("🔍 Processing payment_intent.processing...");
+            System.out.println("  Payment Intent ID: " + paymentIntent.getId());
+            System.out.println("  Amount: $" + (paymentIntent.getAmount() / 100.0));
+            System.out.println("  ⏳ ACH payment processing - will settle in 1-2 business days");
 
         } catch (Exception e) {
-            System.err.println("❌ Error handling account.updated: " + e.getMessage());
+            System.err.println("❌ Error handling payment_intent.processing: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void handleChargeSucceeded(Event event) {
+        try {
+            var deserializer = event.getDataObjectDeserializer();
+            if (deserializer.getObject().isEmpty()) return;
+            Charge charge = (Charge) deserializer.getObject().get();
+
+            System.out.println("🔍 Processing charge.succeeded...");
+            System.out.println("  Charge ID: " + charge.getId());
+            System.out.println("  Payment Intent: " + charge.getPaymentIntent());
+
+            if (charge.getPaymentIntent() != null) {
+                stripePaymentService.handlePaymentIntentSucceeded(charge.getPaymentIntent());
+            }
+
+            System.out.println("✅ Charge reconciled via PaymentIntent: " + charge.getPaymentIntent());
+
+        } catch (Exception e) {
+            System.err.println("❌ Error handling charge.succeeded: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private void handleSetupIntentSucceeded(Event event) {
         try {
+            var deserializer = event.getDataObjectDeserializer();
+            if (deserializer.getObject().isEmpty()) return;
+            SetupIntent setupIntent = (SetupIntent) deserializer.getObject().get();
+
             System.out.println("🔍 Processing setup_intent.succeeded...");
-
-            com.stripe.model.StripeObject stripeObject = event.getData().getObject();
-            com.stripe.model.SetupIntent setupIntent = (com.stripe.model.SetupIntent) stripeObject;
-
             String paymentMethodId = setupIntent.getPaymentMethod();
             String userId = setupIntent.getMetadata().get("user_id");
 
@@ -331,53 +336,26 @@ public class StripeController {
         }
     }
 
-    private void handleChargeSucceeded(Event event) {
+    private void handleAccountUpdated(Event event) {
         try {
-            System.out.println("🔍 Processing charge.succeeded...");
+            var deserializer = event.getDataObjectDeserializer();
+            if (deserializer.getObject().isEmpty()) return;
+            Account account = (Account) deserializer.getObject().get();
 
-            com.stripe.model.StripeObject stripeObject = event.getData().getObject();
-            Charge charge = (Charge) stripeObject;
+            System.out.println("🔍 Processing account.updated...");
+            String accountId = account.getId();
+            System.out.println("  Account ID: " + accountId);
 
-            String chargeId = charge.getId();
-            String paymentIntentId = charge.getPaymentIntent();
-
-            System.out.println("  Charge ID: " + chargeId);
-            System.out.println("  Payment Intent: " + paymentIntentId);
-
-            if (paymentIntentId == null) {
-                System.out.println("⚠️ Charge has no PaymentIntent - skipping");
-                return;
-            }
-
-            // Reconcile via the PaymentIntent
-            stripePaymentService.handlePaymentIntentSucceeded(paymentIntentId);
-
-            System.out.println("✅ Charge reconciled via PaymentIntent: " + paymentIntentId);
+            stripeConnectService.updateAccountStatus(accountId);
+            System.out.println("✅ Account status updated successfully");
 
         } catch (Exception e) {
-            System.err.println("❌ Error handling charge.succeeded: " + e.getMessage());
+            System.err.println("❌ Error handling account.updated: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private void handlePaymentIntentProcessing(Event event) {
-        try {
-            System.out.println("🔍 Processing payment_intent.processing...");
-
-            com.stripe.model.StripeObject stripeObject = event.getData().getObject();
-            com.stripe.model.PaymentIntent paymentIntent = (com.stripe.model.PaymentIntent) stripeObject;
-
-            String paymentIntentId = paymentIntent.getId();
-            Long amount = paymentIntent.getAmount();
-
-            System.out.println("  Payment Intent ID: " + paymentIntentId);
-            System.out.println("  Amount: $" + (amount / 100.0));
-            System.out.println("  ⏳ ACH payment processing - will settle in 1-2 business days");
-
-        } catch (Exception e) {
-            System.err.println("❌ Error handling payment_intent.processing: " + e.getMessage());
-            e.printStackTrace();
-        }
+    private void handlePaymentIntentFailed(Event event) {
+        System.out.println("❌ Payment failed: " + event.getId());
     }
-    
 }
