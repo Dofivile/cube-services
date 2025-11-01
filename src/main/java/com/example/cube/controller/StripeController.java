@@ -8,6 +8,9 @@ import com.example.cube.service.BankAccountService;
 import com.example.cube.service.PayoutService;
 import com.example.cube.service.StripeConnectService;
 import com.example.cube.service.StripePaymentService;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.stripe.model.Event;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.*;
@@ -253,18 +256,29 @@ public class StripeController {
 
     // ==================== PRIVATE HELPERS ====================
 
+
     private void handlePaymentIntentSucceeded(Event event) {
         try {
-            var deserializer = event.getDataObjectDeserializer();
-            if (deserializer.getObject().isEmpty()) return;
-            PaymentIntent paymentIntent = (PaymentIntent) deserializer.getObject().get();
-
             System.out.println("🔍 Processing payment_intent.succeeded...");
-            System.out.println("  Payment Intent ID: " + paymentIntent.getId());
-            System.out.println("  Status: " + paymentIntent.getStatus());
-            System.out.println("  Amount: " + paymentIntent.getAmount());
 
-            stripePaymentService.handlePaymentIntentSucceeded(paymentIntent.getId());
+            // ✅ Get raw JSON safely
+            String rawJson = event.getData().getObject().toJson();
+            JsonObject data = JsonParser.parseString(rawJson).getAsJsonObject();
+
+            if (data == null || !data.has("id")) {
+                System.err.println("❌ Missing payment_intent id in webhook data");
+                return;
+            }
+
+            String paymentIntentId = data.get("id").getAsString();
+            String status = data.has("status") ? data.get("status").getAsString() : "unknown";
+            long amount = data.has("amount") ? data.get("amount").getAsLong() : 0L;
+
+            System.out.println("  Payment Intent ID: " + paymentIntentId);
+            System.out.println("  Status: " + status);
+            System.out.println("  Amount: " + amount);
+
+            stripePaymentService.handlePaymentIntentSucceeded(paymentIntentId);
             System.out.println("✅ Payment intent processed successfully");
 
         } catch (Exception e) {
@@ -272,6 +286,9 @@ public class StripeController {
             e.printStackTrace();
         }
     }
+
+
+
 
     private void handlePaymentIntentProcessing(Event event) {
         try {
