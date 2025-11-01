@@ -295,8 +295,19 @@ public class StripeController {
 
     private void handleChargeSucceeded(Event event) {
         try {
+            System.out.println("🔍 Processing charge.succeeded (start)...");
+            System.out.println("  Event ID: " + event.getId());
+
             var deserializer = event.getDataObjectDeserializer();
-            if (deserializer.getObject().isEmpty()) return;
+            System.out.println("  Deserializer created: " + deserializer);
+            System.out.println("  Object present: " + !deserializer.getObject().isEmpty());
+
+            if (deserializer.getObject().isEmpty()) {
+                System.err.println("⚠️ Charge object is empty - deserialization failed!");
+                System.err.println("  Event data: " + event.getData());
+                return;
+            }
+
             Charge charge = (Charge) deserializer.getObject().get();
 
             System.out.println("🔍 Processing charge.succeeded...");
