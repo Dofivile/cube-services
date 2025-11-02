@@ -9,6 +9,7 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -214,10 +215,25 @@ public class StripePaymentServiceImpl implements StripePaymentService {
         UserDetails user = userDetailsRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Return existing customer
         if (user.getStripeCustomerId() != null) {
+            try {
+                Customer customer = Customer.retrieve(user.getStripeCustomerId());
+                String fullName = ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                        (user.getLastName() != null ? user.getLastName() : "")).trim();
+
+                if (!fullName.isEmpty() && (customer.getName() == null || customer.getName().isBlank())) {
+                    CustomerUpdateParams updateParams = CustomerUpdateParams.builder()
+                            .setName(fullName)
+                            .build();
+                    customer.update(updateParams);
+                    System.out.println("✅ Updated Stripe customer name: " + fullName);
+                }
+            } catch (StripeException e) {
+                System.err.println("⚠️ Failed to update customer name: " + e.getMessage());
+            }
             return user.getStripeCustomerId();
         }
+
 
         // Create new customer
         try {
