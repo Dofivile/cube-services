@@ -46,6 +46,7 @@ public class CubeServiceImpl implements CubeService {
         validateCurrency(createCubeRequest);
 
         cube = cubeMapper.toEntity(createCubeRequest);
+        cube.setUser_id(userId);
         cube.setDuration(durationRepo.getReferenceById(createCubeRequest.getDurationId()));
         cube.setCurrentCycle(1);
         cube.setRotationId(1);
