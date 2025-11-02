@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "payment_transactions", schema = "public")
-public class PaymentTransaction {
+@Table(name = "transactions", schema = "public")
+public class Transaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -51,9 +51,6 @@ public class PaymentTransaction {
     @Column(name = "failure_reason")
     private String failureReason;
 
-    @Column(name = "stripe_fee")
-    private BigDecimal stripeFee = BigDecimal.ZERO;
-
     public String getFailureReason() {
         return failureReason;
     }
@@ -62,9 +59,6 @@ public class PaymentTransaction {
         return stripeTransferId;
     }
 
-    public BigDecimal getStripeFee() {
-        return stripeFee;
-    }
 
     public void setStripeTransferId(String stripeTransferId) {
         this.stripeTransferId = stripeTransferId;
@@ -74,9 +68,6 @@ public class PaymentTransaction {
         this.failureReason = failureReason;
     }
 
-    public void setStripeFee(BigDecimal stripeFee) {
-        this.stripeFee = stripeFee;
-    }
 // Getters and Setters
 
     public String getStripePaymentIntentId() {

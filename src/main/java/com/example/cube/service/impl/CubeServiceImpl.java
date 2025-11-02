@@ -36,8 +36,8 @@ public class CubeServiceImpl implements CubeService {
     }
 
     @Override
-    @Transactional  // - ensures both operations succeed or both fail
-    public Cube createCubeFromDTO(CreateCubeRequest createCubeRequest) {
+    @Transactional
+    public Cube createCubeFromDTO(CreateCubeRequest createCubeRequest, UUID userId) {  // Add userId parameter
 
         Cube cube;
         Cube savedCube;
@@ -48,12 +48,13 @@ public class CubeServiceImpl implements CubeService {
         cube = cubeMapper.toEntity(createCubeRequest);
         cube.setDuration(durationRepo.getReferenceById(createCubeRequest.getDurationId()));
         cube.setCurrentCycle(1);
-        cube.setRotationId(1);  // Set rotation system to random (1) -- (2) is poll system
+        cube.setRotationId(1);
         savedCube = cubeRepository.save(cube);
+
         // Add creator as admin member
         creatorMember = new CubeMember();
         creatorMember.setCubeId(savedCube.getCubeId());
-        creatorMember.setUserId(createCubeRequest.getUser_id());
+        creatorMember.setUserId(userId);  // ✅ Use the userId parameter from auth token
         creatorMember.setRoleId(1);  // 1 = Admin role
         cubeMemberRepository.save(creatorMember);
 

@@ -11,8 +11,7 @@ import java.util.UUID;
  */
 public interface CubeService {
 
-    // Create a new Cube from DTO (used by frontend requests)
-    Cube createCubeFromDTO(CreateCubeRequest createCubeRequest);
+    Cube createCubeFromDTO(CreateCubeRequest createCubeRequest, UUID userId);
 
     // Get all cube IDs for a user
     List<UUID> getUserCubeIds(UUID userId);

@@ -44,10 +44,14 @@ public class CubeController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<CreateCubeResponse> createCube(@RequestHeader("Authorization") String authHeader, @RequestBody CreateCubeRequest createCubeRequest) {
-        authenticationService.validateAndExtractUserId(authHeader);
+    public ResponseEntity<CreateCubeResponse> createCube(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody CreateCubeRequest createCubeRequest) {
 
-        Cube savedCube = cubeService.createCubeFromDTO(createCubeRequest);
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+
+        // Pass userId to service
+        Cube savedCube = cubeService.createCubeFromDTO(createCubeRequest, userId);
         CreateCubeResponse response = cubeMapper.toResponse(savedCube);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

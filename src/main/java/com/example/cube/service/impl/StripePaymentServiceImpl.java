@@ -172,7 +172,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     .orElseThrow(() -> new RuntimeException("Cube not found: " + cubeId));
 
             // Create payment transaction record
-            PaymentTransaction transaction = new PaymentTransaction();
+            Transaction transaction = new Transaction();
             transaction.setUserId(userId);
             transaction.setCubeId(cubeId);
             transaction.setMemberId(memberId);
@@ -221,15 +221,30 @@ public class StripePaymentServiceImpl implements StripePaymentService {
 
         // Create new customer
         try {
-            CustomerCreateParams params = CustomerCreateParams.builder()
-                    .putMetadata("user_id", userId.toString())
-                    .build();
+            // Build customer name
+            String customerName = null;
+            if (user.getFirstName() != null || user.getLastName() != null) {
+                customerName = (user.getFirstName() != null ? user.getFirstName() : "") +
+                        " " +
+                        (user.getLastName() != null ? user.getLastName() : "");
+                customerName = customerName.trim();
+            }
 
+            CustomerCreateParams.Builder paramsBuilder = CustomerCreateParams.builder()
+                    .putMetadata("user_id", userId.toString());
+
+            // Add name if available
+            if (customerName != null && !customerName.isEmpty()) {
+                paramsBuilder.setName(customerName);
+            }
+
+            CustomerCreateParams params = paramsBuilder.build();
             Customer customer = Customer.create(params);
+
             user.setStripeCustomerId(customer.getId());
             userDetailsRepository.save(user);
 
-            System.out.println("✅ Created Stripe customer: " + customer.getId() + " for user: " + userId);
+            System.out.println("✅ Created Stripe customer: " + customer.getId() + " (Name: " + customerName);
 
             return customer.getId();
 

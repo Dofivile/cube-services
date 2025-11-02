@@ -1,18 +1,13 @@
 package com.example.cube.service.impl;
 
-import com.example.cube.dto.response.CycleProcessDTO;
-import com.example.cube.dto.response.CycleStatusDTO;
-import com.example.cube.dto.response.MemberPayoutStatus;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeMember;
 import com.example.cube.model.CycleWinner;
-import com.example.cube.model.PaymentTransaction;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.repository.CubeRepository;
 import com.example.cube.repository.CycleWinnerRepository;
 import com.example.cube.repository.PaymentTransactionRepository;
 import com.example.cube.service.CycleService;
-import com.example.cube.service.PayoutService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,11 +17,8 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class CycleServiceImpl implements CycleService {
@@ -189,7 +181,7 @@ public class CycleServiceImpl implements CycleService {
         int durationDays = cube.getDuration().getDurationDays();
         int current = cube.getCurrentCycle() != null ? cube.getCurrentCycle() : 1;
 
-        // Testing shortcut: if duration name indicates 3-minute cycles, advance in minutes
+        // Testing shortcut: if duration name indicates 3-minute cycles, advance in minutes/ remove in prod
         if (durationName != null && durationName.equalsIgnoreCase("MINUTES")) {
             int minutes = 3 * current;
             return cube.getStartDate().plus(minutes, ChronoUnit.MINUTES);

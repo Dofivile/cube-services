@@ -1,7 +1,7 @@
 package com.example.cube.service.impl;
 
 import com.example.cube.model.CubeMember;
-import com.example.cube.model.PaymentTransaction;
+import com.example.cube.model.Transaction;
 import com.example.cube.model.UserDetails;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.repository.PaymentTransactionRepository;
@@ -134,7 +134,7 @@ public class PayoutServiceImpl implements PayoutService {
             System.out.println("   💵 Money will arrive in winner's bank in 2-3 business days");
 
             // 5. Create transaction record with BOTH IDs
-            PaymentTransaction transaction = new PaymentTransaction();
+            Transaction transaction = new Transaction();
             transaction.setUserId(winnerId);
             transaction.setMemberId(member.getMemberId());
             transaction.setCubeId(cubeId);
@@ -146,7 +146,7 @@ public class PayoutServiceImpl implements PayoutService {
             transaction.setStripePaymentIntentId(payout.getId()); // Store payout ID here (or add new column)
             transaction.setProcessedAt(LocalDateTime.now());
 
-            PaymentTransaction saved = paymentTransactionRepository.save(transaction);
+            Transaction saved = paymentTransactionRepository.save(transaction);
 
             // 6. Update member payout status
             member.setHasReceivedPayout(true);
@@ -203,7 +203,7 @@ public class PayoutServiceImpl implements PayoutService {
         CubeMember member = cubeMemberRepository.findByCubeIdAndUserId(cubeId, winnerId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
 
-        PaymentTransaction transaction = new PaymentTransaction();
+        Transaction transaction = new Transaction();
         transaction.setUserId(winnerId);
         transaction.setMemberId(member.getMemberId());
         transaction.setCubeId(cubeId);
@@ -213,7 +213,7 @@ public class PayoutServiceImpl implements PayoutService {
         transaction.setCycleNumber(cycleNumber);
         transaction.setFailureReason(failureReason);
 
-        PaymentTransaction saved = paymentTransactionRepository.save(transaction);
+        Transaction saved = paymentTransactionRepository.save(transaction);
 
         System.out.println("❌ Failed transaction recorded: " + saved.getPaymentId());
 

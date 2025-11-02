@@ -19,8 +19,6 @@ public class CreateCubeRequest {
     private String name;
     private String description;
     @NotNull
-    private UUID user_id;
-    @NotNull
     @Positive
     private BigDecimal amountPerCycle;
     @NotNull
@@ -37,9 +35,6 @@ public class CreateCubeRequest {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-
-    public UUID getUser_id() { return user_id; }
-    public void setUser_id(UUID user_id) { this.user_id = user_id; }
 
     public BigDecimal getAmountPerCycle() { return amountPerCycle; }
     public void setAmountPerCycle(BigDecimal amountPerCycle) { this.amountPerCycle = amountPerCycle; }
