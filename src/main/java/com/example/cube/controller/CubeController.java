@@ -106,7 +106,7 @@ public class CubeController {
             Map<String, String> response = new HashMap<>();
             response.put("message", "Cube started successfully!");
             return ResponseEntity.ok(response);
-            
+
         } catch (RuntimeException e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());

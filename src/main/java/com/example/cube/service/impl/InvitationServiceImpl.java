@@ -66,7 +66,7 @@ public class InvitationServiceImpl implements InvitationService {
         validateCubeCapacity(cube, request.getEmails().size());
 
         // 4. Process each email invitation
-        Map<String, String> results = processInvitations(cubeId, request.getEmails(), request.getRoleId(), invitedBy, cube);
+        Map<String, String> results = processInvitations(cubeId, request.getEmails(), invitedBy, cube);
 
         // 5. Build response
         InviteMembersResponse response = new InviteMembersResponse();
@@ -128,7 +128,7 @@ public class InvitationServiceImpl implements InvitationService {
         CubeMember member = new CubeMember();
         member.setCubeId(cube.getCubeId());
         member.setUserId(actingUserId);
-        member.setRoleId(invitation.getRoleId() != null ? invitation.getRoleId() : 2);
+        member.setRoleId(2);
         cubeMemberRepository.save(member);
 
         // 7. Mark invitation accepted
@@ -195,7 +195,8 @@ public class InvitationServiceImpl implements InvitationService {
                 CubeMember member = new CubeMember();
                 member.setCubeId(cubeId);
                 member.setUserId(userId);
-                member.setRoleId(request.getRoleId());
+                // Enforce default member role (2)
+                member.setRoleId(2);
                 cubeMemberRepository.save(member);
 
                 results.put(userId.toString(), "added");
@@ -232,12 +233,12 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     private Map<String, String> processInvitations(UUID cubeId, List<String> emails,
-                                                   Integer roleId, UUID invitedBy, Cube cube) {
+                                                   UUID invitedBy, Cube cube) {
         Map<String, String> results = new HashMap<>();
 
         for (String email : emails) {
             try {
-                String status = createSingleInvitation(cubeId, email, roleId, invitedBy, cube);
+                String status = createSingleInvitation(cubeId, email, invitedBy, cube);
                 results.put(email, status);
             } catch (Exception e) {
                 results.put(email, "error: " + e.getMessage());
@@ -247,7 +248,7 @@ public class InvitationServiceImpl implements InvitationService {
         return results;
     }
 
-    private String createSingleInvitation(UUID cubeId, String email, Integer roleId,
+    private String createSingleInvitation(UUID cubeId, String email,
                                           UUID invitedBy, Cube cube) {
         // 1. Check if user with this email is already a member
         String existingUserId = userLookupService.getUserIdByEmail(email);
@@ -269,7 +270,8 @@ public class InvitationServiceImpl implements InvitationService {
         invitation.setEmail(email);
         invitation.setStatusId(1);
         invitation.setInvitedBy(invitedBy);
-        invitation.setRoleId(roleId);
+        // Enforce default member role (2) for invitations
+        invitation.setRoleId(2);
 
         // Set inviteeId if user exists in system
         if (existingUserId != null) {

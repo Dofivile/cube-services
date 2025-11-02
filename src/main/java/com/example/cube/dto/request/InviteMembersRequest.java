@@ -13,8 +13,7 @@ public class InviteMembersRequest {
     @NotEmpty(message = "Must invite at least one member")
     private List<String> emails;
 
-    @NotNull(message = "Role is required")
-    private Integer roleId;
+    // roleId field REMOVED - backend will enforce roleId = 2 for invited members
 
     // Getters and Setters
     public UUID getCubeId() {
@@ -31,13 +30,5 @@ public class InviteMembersRequest {
 
     public void setEmails(List<String> emails) {
         this.emails = emails;
-    }
-
-    public Integer getRoleId() {
-        return roleId;
-    }
-
-    public void setRoleId(Integer roleId) {
-        this.roleId = roleId;
     }
 }

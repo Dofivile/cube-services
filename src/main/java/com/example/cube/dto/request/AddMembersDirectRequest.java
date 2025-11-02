@@ -13,8 +13,7 @@ public class AddMembersDirectRequest {
     @NotEmpty(message = "Must add at least one member")
     private List<UUID> userIds;  // Direct user IDs, not emails!
 
-    @NotNull(message = "Role is required")
-    private Integer roleId;
+    // roleId field REMOVED - backend will enforce roleId = 2 for added members
 
     // Getters and Setters
     public UUID getCubeId() {
@@ -31,13 +30,5 @@ public class AddMembersDirectRequest {
 
     public void setUserIds(List<UUID> userIds) {
         this.userIds = userIds;
-    }
-
-    public Integer getRoleId() {
-        return roleId;
-    }
-
-    public void setRoleId(Integer roleId) {
-        this.roleId = roleId;
     }
 }
