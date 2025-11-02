@@ -1,13 +1,23 @@
 package com.example.cube.service.impl;
 
+import com.example.cube.model.Cube;
+import com.example.cube.model.CubeMember;
+import com.example.cube.repository.AuthUserRepository;
+import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.service.EmailService;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -20,6 +30,15 @@ public class EmailServiceImpl implements EmailService {
 
     @Value("${resend.from.email:no-reply@cubemoney.io}")
     private String fromEmail;
+
+    @Value("${admin.email}")
+    private String adminEmail;
+
+    @Autowired
+    private CubeMemberRepository cubeMemberRepository;
+
+    @Autowired
+    private AuthUserRepository authUserRepository;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -43,7 +62,7 @@ public class EmailServiceImpl implements EmailService {
         emailBody.put("from", verifiedSender);
         emailBody.put("to", email);
         emailBody.put("subject", "You've been invited to join " + cubeName);
-        emailBody.put("html", buildEmailHtml(invitationLink, cubeName));
+        emailBody.put("html", buildInvitationEmailHtml(invitationLink, cubeName));
 
         HttpEntity<String> request = new HttpEntity<>(emailBody.toString(), headers);
 
@@ -67,10 +86,112 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Override
+    public void sendWinnerNotificationEmails(Cube cube, CubeMember winner, BigDecimal payoutAmount) {
+        try {
+            // 1. Fetch all members
+            List<CubeMember> allMembers = cubeMemberRepository.findByCubeId(cube.getCubeId());
+
+            // 2. Get all user IDs
+            UUID[] userIds = allMembers.stream()
+                    .map(CubeMember::getUserId)
+                    .toArray(UUID[]::new);
+
+            // 3. Fetch all user details (email, first_name, last_name) in ONE query
+            Map<String, UserInfo> userInfoMap = authUserRepository.findUserDetailsByUserIds(userIds)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            row -> (String) row.get("user_id"),
+                            row -> new UserInfo(
+                                    (String) row.get("email"),
+                                    (String) row.get("first_name"),
+                                    (String) row.get("last_name")
+                            )
+                    ));
+
+            // 4. Get winner details
+            UserInfo winnerInfo = userInfoMap.get(winner.getUserId().toString());
+            String winnerName = winnerInfo != null ? winnerInfo.getFullName() : "Unknown";
+            String winnerEmail = winnerInfo != null ? winnerInfo.email : null;
+
+            String subject = "🎉 " + cube.getName() + " — Cycle " + cube.getCurrentCycle() + " Winner!";
+            String htmlBody = buildWinnerEmailHtml(cube, winnerName, payoutAmount);
+
+            // 5. Send emails to all members
+            int emailsSent = 0;
+            String resendApiUrl = "https://api.resend.com/emails";
+
+            for (CubeMember member : allMembers) {
+                UserInfo memberInfo = userInfoMap.get(member.getUserId().toString());
+                String email = memberInfo != null ? memberInfo.email : null;
+
+                if (email == null || email.isBlank()) {
+                    System.out.println("⚠️ Skipping member " + member.getMemberId() + " - no email found");
+                    continue;
+                }
+
+                try {
+                    sendEmail(resendApiUrl, email, subject, htmlBody);
+                    emailsSent++;
+                } catch (Exception e) {
+                    System.err.println("❌ Failed to send email to " + email + ": " + e.getMessage());
+                }
+            }
+
+            // 6. Send admin notification
+            sendAdminNotificationEmail(resendApiUrl, cube, winnerName, winnerEmail, payoutAmount);
+
+            System.out.println("✅ Winner emails sent for cube " + cube.getName() + " (" + emailsSent + "/" + allMembers.size() + " members notified)");
+
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send winner emails: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     /**
-     * Build HTML email template
+     * Helper method to send email via Resend API
      */
-    private String buildEmailHtml(String invitationLink, String cubeName) {
+    private void sendEmail(String apiUrl, String to, String subject, String html) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + resendApiKey);
+
+        JSONObject emailBody = new JSONObject();
+        emailBody.put("from", fromEmail);
+        emailBody.put("to", to);
+        emailBody.put("subject", subject);
+        emailBody.put("html", html);
+
+        HttpEntity<String> request = new HttpEntity<>(emailBody.toString(), headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Failed to send email: " + response.getBody());
+        }
+    }
+
+    /**
+     * Send admin notification for payout review
+     */
+    private void sendAdminNotificationEmail(String apiUrl, Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount) {
+        try {
+            String subject = "🔔 Cube Payout Review — " + cube.getName() + " (Cycle " + cube.getCurrentCycle() + ")";
+            String htmlBody = buildAdminEmailHtml(cube, winnerName, winnerEmail, payoutAmount);
+
+            sendEmail(apiUrl, adminEmail, subject, htmlBody);
+            System.out.println("✅ Admin notification sent for cube " + cube.getName());
+
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send admin notification: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Build HTML email template for invitation
+     */
+    private String buildInvitationEmailHtml(String invitationLink, String cubeName) {
         return String.format("""
             <!DOCTYPE html>
             <html>
@@ -121,5 +242,148 @@ public class EmailServiceImpl implements EmailService {
             </body>
             </html>
             """, cubeName, invitationLink, invitationLink);
+    }
+
+    /**
+     * Build HTML email template for winner notification (sent to all members)
+     */
+    private String buildWinnerEmailHtml(Cube cube, String winnerName, BigDecimal payoutAmount) {
+        return String.format("""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+                    <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+                        <tr>
+                            <td align="center">
+                                <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; overflow: hidden;">
+                                    <tr>
+                                        <td style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); padding: 30px; text-align: center;">
+                                            <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Cycle Winner Announcement!</h1>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 40px;">
+                                            <h2 style="color: #1f2937; margin-top: 0;">%s</h2>
+                                            
+                                            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+                                                <p style="margin: 5px 0; font-size: 16px;"><strong>Winner:</strong> %s</p>
+                                                <p style="margin: 5px 0; font-size: 16px;"><strong>Payout Amount:</strong> <span style="color: #059669; font-size: 20px;">$%s</span></p>
+                                                <p style="margin: 5px 0; font-size: 16px;"><strong>Cycle:</strong> %d</p>
+                                            </div>
+                                            
+                                            <p style="color: #4b5563; line-height: 1.6;">
+                                                Congratulations to the winner! 🎊 Thank you to all members for staying consistent with your contributions. 
+                                                The payout will be processed soon.
+                                            </p>
+                                            
+                                            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                                            
+                                            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+                                                This message was sent automatically by Cube's payout system.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """,
+                cube.getName(),
+                winnerName,
+                payoutAmount,
+                cube.getCurrentCycle()
+        );
+    }
+
+    /**
+     * Build HTML email template for admin notification
+     */
+    private String buildAdminEmailHtml(Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount) {
+        return String.format("""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+                    <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+                        <tr>
+                            <td align="center">
+                                <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; overflow: hidden;">
+                                    <tr>
+                                        <td style="background: #dc2626; padding: 20px;">
+                                            <h2 style="color: white; margin: 0;">⚠️ Payout Review Required</h2>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 30px;">
+                                            <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                                <h3 style="margin-top: 0; color: #1f2937;">Cycle Winner Details</h3>
+                                                <table style="width: 100%%; border-collapse: collapse;">
+                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube:</strong></td><td style="padding: 8px 0;">%s</td></tr>
+                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Winner:</strong></td><td style="padding: 8px 0;">%s</td></tr>
+                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Winner Email:</strong></td><td style="padding: 8px 0;">%s</td></tr>
+                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Amount:</strong></td><td style="padding: 8px 0; color: #059669; font-size: 18px;"><strong>$%s</strong></td></tr>
+                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cycle:</strong></td><td style="padding: 8px 0;">%d</td></tr>
+                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
+                                                </table>
+                                            </div>
+                                            
+                                            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                                                <p style="margin: 0; color: #92400e;"><strong>Action Required:</strong> Review and process payout in Stripe dashboard.</p>
+                                            </div>
+                                            
+                                            <p style="color: #6b7280; font-size: 14px;">
+                                                All members have been notified of this winner selection. Please process the payout at your earliest convenience.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """,
+                cube.getName(),
+                winnerName,
+                winnerEmail != null ? winnerEmail : "N/A",
+                payoutAmount,
+                cube.getCurrentCycle(),
+                cube.getCubeId()
+        );
+    }
+
+    /**
+     * Helper class to hold user information
+     */
+    private static class UserInfo {
+        final String email;
+        final String firstName;
+        final String lastName;
+
+        UserInfo(String email, String firstName, String lastName) {
+            this.email = email;
+            this.firstName = firstName;
+            this.lastName = lastName;
+        }
+
+        String getFullName() {
+            if (firstName != null && lastName != null) {
+                return firstName + " " + lastName;
+            } else if (firstName != null) {
+                return firstName;
+            } else if (lastName != null) {
+                return lastName;
+            }
+            return "Member";
+        }
     }
 }

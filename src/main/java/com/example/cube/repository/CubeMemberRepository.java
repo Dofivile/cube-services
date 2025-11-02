@@ -10,7 +10,9 @@ import java.util.UUID;
 @Repository
 public interface CubeMemberRepository extends JpaRepository<CubeMember, UUID> {
     List<CubeMember> findByCubeId(UUID cubeId);
+
     boolean existsByCubeIdAndUserId(UUID cubeId, UUID userId);
+
     // Find members who have or haven't received payout
     List<CubeMember> findByCubeIdAndHasReceivedPayout(UUID cubeId, Boolean hasReceivedPayout);
 

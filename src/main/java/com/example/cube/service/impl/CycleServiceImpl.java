@@ -8,6 +8,7 @@ import com.example.cube.repository.CubeRepository;
 import com.example.cube.repository.CycleWinnerRepository;
 import com.example.cube.repository.PaymentTransactionRepository;
 import com.example.cube.service.CycleService;
+import com.example.cube.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,16 +28,19 @@ public class CycleServiceImpl implements CycleService {
     private final CubeMemberRepository cubeMemberRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final CycleWinnerRepository cycleWinnerRepository;
+    private final EmailService emailService;
 
     @Autowired
     public CycleServiceImpl(CubeRepository cubeRepository,
                             CubeMemberRepository cubeMemberRepository,
                             PaymentTransactionRepository paymentTransactionRepository,
-                            CycleWinnerRepository cycleWinnerRepository) {
+                            CycleWinnerRepository cycleWinnerRepository,
+                            EmailService emailService) {
         this.cubeRepository = cubeRepository;
         this.cubeMemberRepository = cubeMemberRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.cycleWinnerRepository = cycleWinnerRepository;
+        this.emailService = emailService;
     }
 
     @Override
@@ -50,11 +54,11 @@ public class CycleServiceImpl implements CycleService {
         // 2. Validate member belongs to cube and matches JWT user
         CubeMember member = cubeMemberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
-        
+
         if (!member.getCubeId().equals(cubeId)) {
             throw new RuntimeException("Member does not belong to this cube");
         }
-        
+
         if (!member.getUserId().equals(userId)) {
             throw new RuntimeException("Member does not match authenticated user");
         }
@@ -170,6 +174,14 @@ public class CycleServiceImpl implements CycleService {
         System.out.println("   Cube: " + cubeId);
         System.out.println("   Winner: " + winner.getUserId());
         System.out.println("   Amount: $" + payoutAmount);
+
+        // 9. Send notification emails to all members and admin
+        try {
+            emailService.sendWinnerNotificationEmails(cube, winner, payoutAmount);
+        } catch (Exception e) {
+            // Log error but don't fail the transaction - winner is already recorded
+            System.err.println("⚠️ Failed to send notification emails, but cycle processing completed: " + e.getMessage());
+        }
     }
 
     private Instant calculateNextPayoutDate(Cube cube) {
