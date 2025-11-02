@@ -1,10 +1,11 @@
 package com.example.cube.service.impl;
 
+import com.example.cube.dto.UserInfoDTO;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeMember;
-import com.example.cube.repository.AuthUserRepository;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.service.EmailService;
+import com.example.cube.service.impl.UserService;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,11 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -38,7 +37,7 @@ public class EmailServiceImpl implements EmailService {
     private CubeMemberRepository cubeMemberRepository;
 
     @Autowired
-    private AuthUserRepository authUserRepository;
+    private UserService userService;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -98,21 +97,12 @@ public class EmailServiceImpl implements EmailService {
                     .toArray(UUID[]::new);
 
             // 3. Fetch all user details (email, first_name, last_name) in ONE query
-            Map<String, UserInfo> userInfoMap = authUserRepository.findUserDetailsByUserIds(userIds)
-                    .stream()
-                    .collect(Collectors.toMap(
-                            row -> (String) row.get("user_id"),
-                            row -> new UserInfo(
-                                    (String) row.get("email"),
-                                    (String) row.get("first_name"),
-                                    (String) row.get("last_name")
-                            )
-                    ));
+            Map<UUID, UserInfoDTO> userInfoMap = userService.getUserInfoMap(userIds);
 
             // 4. Get winner details
-            UserInfo winnerInfo = userInfoMap.get(winner.getUserId().toString());
+            UserInfoDTO winnerInfo = userInfoMap.get(winner.getUserId());
             String winnerName = winnerInfo != null ? winnerInfo.getFullName() : "Unknown";
-            String winnerEmail = winnerInfo != null ? winnerInfo.email : null;
+            String winnerEmail = winnerInfo != null ? winnerInfo.getEmail() : null;
 
             String subject = "🎉 " + cube.getName() + " — Cycle " + cube.getCurrentCycle() + " Winner!";
             String htmlBody = buildWinnerEmailHtml(cube, winnerName, payoutAmount);
@@ -122,8 +112,8 @@ public class EmailServiceImpl implements EmailService {
             String resendApiUrl = "https://api.resend.com/emails";
 
             for (CubeMember member : allMembers) {
-                UserInfo memberInfo = userInfoMap.get(member.getUserId().toString());
-                String email = memberInfo != null ? memberInfo.email : null;
+                UserInfoDTO memberInfo = userInfoMap.get(member.getUserId());
+                String email = memberInfo != null ? memberInfo.getEmail() : null;
 
                 if (email == null || email.isBlank()) {
                     System.out.println("⚠️ Skipping member " + member.getMemberId() + " - no email found");
@@ -359,31 +349,5 @@ public class EmailServiceImpl implements EmailService {
                 cube.getCurrentCycle(),
                 cube.getCubeId()
         );
-    }
-
-    /**
-     * Helper class to hold user information
-     */
-    private static class UserInfo {
-        final String email;
-        final String firstName;
-        final String lastName;
-
-        UserInfo(String email, String firstName, String lastName) {
-            this.email = email;
-            this.firstName = firstName;
-            this.lastName = lastName;
-        }
-
-        String getFullName() {
-            if (firstName != null && lastName != null) {
-                return firstName + " " + lastName;
-            } else if (firstName != null) {
-                return firstName;
-            } else if (lastName != null) {
-                return lastName;
-            }
-            return "Member";
-        }
     }
 }

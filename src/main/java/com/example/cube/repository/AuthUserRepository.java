@@ -13,8 +13,9 @@ import java.util.UUID;
 public interface AuthUserRepository extends JpaRepository<Object, UUID> {
 
     /**
-     * Fetch user details (email, first_name, last_name) for multiple users in a single query.
-     * Joins auth.users with user_details to get all needed information.
+     * Fetch user contact information (email, first_name, last_name) for multiple users.
+     * Joins Supabase auth.users table with local user_details table.
+     * Returns raw Map to avoid creating entity for auth schema.
      */
     @Query(value = """
         SELECT 
