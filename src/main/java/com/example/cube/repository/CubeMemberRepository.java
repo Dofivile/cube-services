@@ -36,19 +36,9 @@ public interface CubeMemberRepository extends JpaRepository<CubeMember, UUID> {
      * Joins with auth.users and user_details tables
      */
     @Query(value = """
-        SELECT 
-            cm.member_id as memberId,
-            cm.cube_id as cubeId,
-            cm.user_id as userId,
-            cm.role_id as roleId,
-            cm.has_paid as hasPaid,
-            au.email as email,
-            ud.first_name as firstName,
-            ud.last_name as lastName
-        FROM cube_members cm
-        JOIN auth.users au ON cm.user_id = au.id
-        LEFT JOIN user_details ud ON cm.user_id = ud.user_id
-        WHERE cm.cube_id = :cubeId
-        """, nativeQuery = true)
+    SELECT * FROM vw_member_contacts
+    WHERE cube_id = :cubeId
+    """, nativeQuery = true)
     List<MemberWithContact> findMembersWithContactInfo(@Param("cubeId") UUID cubeId);
+
 }
