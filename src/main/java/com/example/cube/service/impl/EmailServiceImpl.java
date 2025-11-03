@@ -38,7 +38,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendInvitationEmail(String email, String inviteToken, String cubeName, UUID invitedBy) {
-        String invitationLink = frontendUrl + "/invitations/accept?token=" + inviteToken;
+        String invitationLink = "https://www.cubemoney.io/invitations/accept?token=" + inviteToken;
 
         // Resend API endpoint
         String resendApiUrl = "https://api.resend.com/emails";
