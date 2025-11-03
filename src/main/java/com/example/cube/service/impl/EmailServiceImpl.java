@@ -1,11 +1,10 @@
 package com.example.cube.service.impl;
 
-import com.example.cube.dto.UserInfoDTO;
+import com.example.cube.dto.MemberWithContact;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeMember;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.service.EmailService;
-import com.example.cube.service.impl.UserService;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +14,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -36,14 +34,10 @@ public class EmailServiceImpl implements EmailService {
     @Autowired
     private CubeMemberRepository cubeMemberRepository;
 
-    @Autowired
-    private UserService userService;
-
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
     public void sendInvitationEmail(String email, String inviteToken, String cubeName, UUID invitedBy) {
-
         String invitationLink = frontendUrl + "/invitations/accept?token=" + inviteToken;
 
         // Resend API endpoint
@@ -54,7 +48,6 @@ public class EmailServiceImpl implements EmailService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + resendApiKey);
         final String verifiedSender = fromEmail != null ? fromEmail : "no-reply@cubemoney.io";
-        headers.set("From", verifiedSender);
 
         // Build email body
         JSONObject emailBody = new JSONObject();
@@ -80,7 +73,6 @@ public class EmailServiceImpl implements EmailService {
             }
         } catch (Exception e) {
             System.err.println("❌ Error sending email to " + email + ": " + e.getMessage());
-            // Don't throw - allow invitation to be created even if email fails
             throw new RuntimeException("Email service error: " + e.getMessage());
         }
     }
@@ -88,32 +80,27 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendWinnerNotificationEmails(Cube cube, CubeMember winner, BigDecimal payoutAmount) {
         try {
-            // 1. Fetch all members
-            List<CubeMember> allMembers = cubeMemberRepository.findByCubeId(cube.getCubeId());
+            // 1. Get all members with contact info in ONE query ✅
+            List<MemberWithContact> members = cubeMemberRepository.findMembersWithContactInfo(cube.getCubeId());
 
-            // 2. Get all user IDs
-            UUID[] userIds = allMembers.stream()
-                    .map(CubeMember::getUserId)
-                    .toArray(UUID[]::new);
+            // 2. Find winner info
+            MemberWithContact winnerInfo = members.stream()
+                    .filter(m -> m.getUserId().equals(winner.getUserId()))
+                    .findFirst()
+                    .orElse(null);
 
-            // 3. Fetch all user details (email, first_name, last_name) in ONE query
-            Map<UUID, UserInfoDTO> userInfoMap = userService.getUserInfoMap(userIds);
-
-            // 4. Get winner details
-            UserInfoDTO winnerInfo = userInfoMap.get(winner.getUserId());
             String winnerName = winnerInfo != null ? winnerInfo.getFullName() : "Unknown";
             String winnerEmail = winnerInfo != null ? winnerInfo.getEmail() : null;
 
             String subject = "🎉 " + cube.getName() + " — Cycle " + cube.getCurrentCycle() + " Winner!";
             String htmlBody = buildWinnerEmailHtml(cube, winnerName, payoutAmount);
 
-            // 5. Send emails to all members
+            // 3. Send emails to all members
             int emailsSent = 0;
             String resendApiUrl = "https://api.resend.com/emails";
 
-            for (CubeMember member : allMembers) {
-                UserInfoDTO memberInfo = userInfoMap.get(member.getUserId());
-                String email = memberInfo != null ? memberInfo.getEmail() : null;
+            for (MemberWithContact member : members) {
+                String email = member.getEmail();
 
                 if (email == null || email.isBlank()) {
                     System.out.println("⚠️ Skipping member " + member.getMemberId() + " - no email found");
@@ -128,10 +115,11 @@ public class EmailServiceImpl implements EmailService {
                 }
             }
 
-            // 6. Send admin notification
+            // 4. Send admin notification
             sendAdminNotificationEmail(resendApiUrl, cube, winnerName, winnerEmail, payoutAmount);
 
-            System.out.println("✅ Winner emails sent for cube " + cube.getName() + " (" + emailsSent + "/" + allMembers.size() + " members notified)");
+            System.out.println("✅ Winner emails sent for cube " + cube.getName() +
+                    " (" + emailsSent + "/" + members.size() + " members notified)");
 
         } catch (Exception e) {
             System.err.println("❌ Failed to send winner emails: " + e.getMessage());
