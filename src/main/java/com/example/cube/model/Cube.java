@@ -59,9 +59,6 @@ public class Cube {
     @JoinColumn(name = "goal_type_id", referencedColumnName = "goal_type_id")
     private GoalType goalType;
 
-    @Column(name = "goal_type_id")
-    private Integer goalTypeId;
-
     @Column(name = "invitation_code", unique = true, length = 6)
     private String invitationCode;
 
