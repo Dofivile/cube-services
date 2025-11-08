@@ -85,7 +85,8 @@ public class CubeMapper {
         response.setStartDate(cube.getStartDate());
         response.setEndDate(cube.getEndDate());
         response.setInvitationCode(cube.getInvitationCode());
-        response.setStatusId(cube.getStatusId());  // Add this line
+        response.setStatusId(cube.getStatusId());
+        response.setTotalToBeCollected(computeTotalToBeCollected(cube));  // Add this line
 
         // Add contribution frequency from duration
         if (cube.getDuration() != null) {
