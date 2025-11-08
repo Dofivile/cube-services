@@ -19,6 +19,7 @@ public class GetCubeResponse {
     private Instant endDate;
     private String contributionFrequency;  // "daily", "weekly", or "monthly"
     private Integer contributionFrequencyDays;  // 1, 7, or 30
+    private Integer statusId;  // 1=draft, 2=active, 3=completed, 4=cancelled
     private Integer goalTypeId;
     private String goalTypeName;
     private String invitationCode;
@@ -71,6 +72,14 @@ public class GetCubeResponse {
 
     public void setContributionFrequencyDays(Integer contributionFrequencyDays) {
         this.contributionFrequencyDays = contributionFrequencyDays;
+    }
+
+    public Integer getStatusId() {
+        return statusId;
+    }
+
+    public void setStatusId(Integer statusId) {
+        this.statusId = statusId;
     }
 
     public BigDecimal getAmountPerCycle() {
