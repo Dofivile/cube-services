@@ -56,19 +56,18 @@ public class CubeController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/listCubes")
-    public ResponseEntity<GetUserCubesResponse> getUserCubes(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestBody GetUserCubesRequest request) {
+    @GetMapping("/my-cubes")
+    public ResponseEntity<GetUserCubesResponse> getMyCubes(
+            @RequestHeader("Authorization") String authHeader) {
 
-        // Validate auth token
-        authenticationService.validateAndExtractUserId(authHeader);
+        // Extract user ID from JWT token automatically
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
 
-        // Get cube IDs for the user
-        List<UUID> cubeIds = cubeService.getUserCubeIds(request.getUser_id());
+        // Get cube IDs for the authenticated user
+        List<UUID> cubeIds = cubeService.getUserCubeIds(userId);
 
         // Build response
-        GetUserCubesResponse response = new GetUserCubesResponse(request.getUser_id(), cubeIds);
+        GetUserCubesResponse response = new GetUserCubesResponse(userId, cubeIds);
 
         return ResponseEntity.ok(response);
     }
