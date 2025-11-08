@@ -55,6 +55,16 @@ public class Cube {
     @Column(name = "rotation_id")
     private Integer rotationId;
 
+    @ManyToOne
+    @JoinColumn(name = "goal_type_id", referencedColumnName = "goal_type_id")
+    private GoalType goalType;
+
+    @Column(name = "goal_type_id")
+    private Integer goalTypeId;
+
+    @Column(name = "invitation_code", unique = true, length = 6)
+    private String invitationCode;
+
     @Column(name = "start_date")
     private Instant startDate;
 
@@ -126,4 +136,12 @@ public class Cube {
     public Integer getRotationId() { return rotationId; }
 
     public void setRotationId(Integer rotationId) { this.rotationId = rotationId; }
+
+    public GoalType getGoalType() { return goalType; }
+
+    public void setGoalType(GoalType goalType) { this.goalType = goalType; }
+
+    public String getInvitationCode() { return invitationCode; }
+
+    public void setInvitationCode(String invitationCode) { this.invitationCode = invitationCode; }
 }

@@ -2,8 +2,10 @@ package com.example.cube.service.impl;
 
 import com.example.cube.dto.request.AddMembersDirectRequest;
 import com.example.cube.dto.request.InviteMembersRequest;
+import com.example.cube.dto.request.JoinCubeRequest;
 import com.example.cube.dto.response.AddMembersDirectResponse;
 import com.example.cube.dto.response.InviteMembersResponse;
+import com.example.cube.dto.response.JoinCubeResponse;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeInvitation;
 import com.example.cube.model.CubeMember;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.security.SecureRandom;
 
 @Service
 public class InvitationServiceImpl implements InvitationService {
@@ -215,6 +218,45 @@ public class InvitationServiceImpl implements InvitationService {
         response.setMessage(String.format("Added %d member(s) directly", successCount));
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public JoinCubeResponse joinCubeByCode(String invitationCode, UUID userId) {
+        // 1. Find cube by invitation code
+        Cube cube = cubeRepository.findByInvitationCode(invitationCode.toUpperCase())
+                .orElseThrow(() -> new RuntimeException("Invalid invitation code"));
+
+        // 2. Check if already a member
+        if (cubeMemberRepository.existsByCubeIdAndUserId(cube.getCubeId(), userId)) {
+            return new JoinCubeResponse(
+                    true,
+                    "You are already a member of this cube",
+                    cube.getCubeId(),
+                    cube.getName(),
+                    cubeMemberRepository.findByCubeIdAndUserId(cube.getCubeId(), userId)
+                            .map(CubeMember::getMemberId)
+                            .orElse(null)
+            );
+        }
+
+        // 3. Validate cube capacity
+        validateCubeCapacity(cube, 1);
+
+        // 4. Add user as member
+        CubeMember member = new CubeMember();
+        member.setCubeId(cube.getCubeId());
+        member.setUserId(userId);
+        member.setRoleId(2); // Regular member role
+        cubeMemberRepository.save(member);
+
+        return new JoinCubeResponse(
+                true,
+                "Successfully joined the cube",
+                cube.getCubeId(),
+                cube.getName(),
+                member.getMemberId()
+        );
     }
 
     // ========== Helper Methods ==========

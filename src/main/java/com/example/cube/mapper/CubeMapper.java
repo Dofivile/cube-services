@@ -45,10 +45,17 @@ public class CubeMapper {
         // Compute total to be collected on demand
         res.setTotalToBeCollected(computeTotalToBeCollected(cube));
         res.setCreatedAt(cube.getCreatedAt());
+        res.setInvitationCode(cube.getInvitationCode());
 
         if (cube.getDuration() != null) {
             res.setDurationId(cube.getDuration().getDurationId());
         }
+
+        if (cube.getGoalType() != null) {
+            res.setGoalTypeId(cube.getGoalType().getGoalTypeId());
+            res.setGoalTypeName(cube.getGoalType().getGoalTypeName());
+        }
+
         return res;
     }
 
@@ -77,11 +84,17 @@ public class CubeMapper {
         response.setNumberOfMembers(cube.getNumberofmembers());
         response.setStartDate(cube.getStartDate());
         response.setEndDate(cube.getEndDate());
+        response.setInvitationCode(cube.getInvitationCode());
 
         // Add contribution frequency from duration
         if (cube.getDuration() != null) {
             response.setContributionFrequency(cube.getDuration().getDurationName());
             response.setContributionFrequencyDays(cube.getDuration().getDurationDays());
+        }
+
+        if (cube.getGoalType() != null) {
+            response.setGoalTypeId(cube.getGoalType().getGoalTypeId());
+            response.setGoalTypeName(cube.getGoalType().getGoalTypeName());
         }
 
         return response;

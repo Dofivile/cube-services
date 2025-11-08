@@ -22,6 +22,9 @@ public class CreateCubeResponse {
     private Integer durationId;
     private BigDecimal totalToBeCollected;
     private Instant createdAt;
+    private Integer goalTypeId;
+    private String goalTypeName;
+    private String invitationCode;
 
     // Getters and Setters
     public UUID getCubeId() { return cubeId; }
@@ -68,4 +71,13 @@ public class CreateCubeResponse {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Integer getGoalTypeId() { return goalTypeId; }
+    public void setGoalTypeId(Integer goalTypeId) { this.goalTypeId = goalTypeId; }
+
+    public String getGoalTypeName() { return goalTypeName; }
+    public void setGoalTypeName(String goalTypeName) { this.goalTypeName = goalTypeName; }
+
+    public String getInvitationCode() { return invitationCode; }
+    public void setInvitationCode(String invitationCode) { this.invitationCode = invitationCode; }
 }

@@ -19,6 +19,9 @@ public class GetCubeResponse {
     private Instant endDate;
     private String contributionFrequency;  // "daily", "weekly", or "monthly"
     private Integer contributionFrequencyDays;  // 1, 7, or 30
+    private Integer goalTypeId;
+    private String goalTypeName;
+    private String invitationCode;
 
     public GetCubeResponse() {}
 
@@ -124,5 +127,29 @@ public class GetCubeResponse {
 
     public void setEndDate(Instant endDate) {
         this.endDate = endDate;
+    }
+
+    public Integer getGoalTypeId() {
+        return goalTypeId;
+    }
+
+    public void setGoalTypeId(Integer goalTypeId) {
+        this.goalTypeId = goalTypeId;
+    }
+
+    public String getGoalTypeName() {
+        return goalTypeName;
+    }
+
+    public void setGoalTypeName(String goalTypeName) {
+        this.goalTypeName = goalTypeName;
+    }
+
+    public String getInvitationCode() {
+        return invitationCode;
+    }
+
+    public void setInvitationCode(String invitationCode) {
+        this.invitationCode = invitationCode;
     }
 }

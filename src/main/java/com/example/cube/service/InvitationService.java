@@ -2,8 +2,10 @@ package com.example.cube.service;
 
 import com.example.cube.dto.request.AddMembersDirectRequest;
 import com.example.cube.dto.request.InviteMembersRequest;
+import com.example.cube.dto.request.JoinCubeRequest;
 import com.example.cube.dto.response.AddMembersDirectResponse;
 import com.example.cube.dto.response.InviteMembersResponse;
+import com.example.cube.dto.response.JoinCubeResponse;
 import java.util.UUID;
 
 public interface InvitationService {
@@ -18,4 +20,6 @@ public interface InvitationService {
 
     // We'll add declineInvitation() later
     AddMembersDirectResponse addMembersDirect(UUID cubeId, AddMembersDirectRequest request, UUID addedBy);
+
+    JoinCubeResponse joinCubeByCode(String invitationCode, UUID userId);
 }

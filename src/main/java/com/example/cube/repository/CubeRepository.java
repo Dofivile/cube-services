@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -22,4 +23,7 @@ public interface CubeRepository extends JpaRepository<Cube, UUID> {
 
     @Query("SELECT c FROM Cube c WHERE c.statusId = 2 AND c.nextPayoutDate <= :now")
     List<Cube> findCubesReadyForProcessing(Instant now);
+
+    boolean existsByInvitationCode(String invitationCode);
+    Optional<Cube> findByInvitationCode(String invitationCode);
 }

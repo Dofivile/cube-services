@@ -1,7 +1,9 @@
 package com.example.cube.controller;
 
 import com.example.cube.dto.request.AcceptInvitationRequest;
+import com.example.cube.dto.request.JoinCubeRequest;
 import com.example.cube.dto.response.AcceptInvitationResponse;
+import com.example.cube.dto.response.JoinCubeResponse;
 import com.example.cube.security.AuthenticationService;
 import com.example.cube.service.InvitationService;
 import jakarta.validation.Valid;
@@ -32,6 +34,16 @@ public class InvitationController {
 
         UUID userId = authenticationService.validateAndExtractUserId(authHeader);
         AcceptInvitationResponse response = invitationService.acceptInvitation(request.getInviteToken(), userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/join")
+    public ResponseEntity<JoinCubeResponse> joinCubeByCode(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody JoinCubeRequest request) {
+
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+        JoinCubeResponse response = invitationService.joinCubeByCode(request.getInvitationCode(), userId);
         return ResponseEntity.ok(response);
     }
 }

@@ -29,6 +29,9 @@ public class CreateCubeRequest {
     @NotBlank
     private String currency;
 
+    // Optional: defaults to "personal" if not provided
+    private Integer goalTypeId;
+
     // Getters and setters
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -48,4 +51,7 @@ public class CreateCubeRequest {
 
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
+
+    public Integer getGoalTypeId() { return goalTypeId; }
+    public void setGoalTypeId(Integer goalTypeId) { this.goalTypeId = goalTypeId; }
 }
