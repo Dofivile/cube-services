@@ -12,11 +12,11 @@ public interface EmailService {
      * Send invitation email to the invitee
      *
      * @param email The recipient's email address
-     * @param inviteToken The unique invitation token
+     * @param invitationCode The cube's invitation code (6-character code)
      * @param cubeName The name of the cube they're being invited to
      * @param invitedBy The UUID of the user who sent the invitation
      */
-    void sendInvitationEmail(String email, String inviteToken, String cubeName, UUID invitedBy);
+    void sendInvitationEmail(String email, String invitationCode, String cubeName, UUID invitedBy);
 
     /**
      * Send winner notification emails to all cube members and admin

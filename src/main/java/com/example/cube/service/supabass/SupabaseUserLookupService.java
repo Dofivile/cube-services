@@ -18,6 +18,9 @@ public class SupabaseUserLookupService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    /**
+     * Get Supabase user ID by email
+     */
     public String getUserIdByEmail(String email) {
         String url = supabaseUrl + "/auth/v1/admin/users?email=" + email;
 
@@ -35,6 +38,32 @@ public class SupabaseUserLookupService {
                 return users.getJSONObject(0).getString("id");
             }
         }
+        return null;
+    }
+
+    /**
+     * Get email by Supabase user ID (reverse lookup)
+     */
+    public String getEmailByUserId(String userId) {
+        String url = supabaseUrl + "/auth/v1/admin/users/" + userId;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("apikey", supabaseKey);
+        headers.set("Authorization", "Bearer " + supabaseKey);
+
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JSONObject user = new JSONObject(response.getBody());
+                return user.optString("email", null);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Failed to lookup email for user " + userId + ": " + e.getMessage());
+        }
+
         return null;
     }
 }

@@ -15,4 +15,6 @@ public interface CubeInvitationRepository extends JpaRepository<CubeInvitation, 
 
     Optional<CubeInvitation> findByInviteToken(String inviteToken);
 
+    // ✅ Add this method to find invitations by cube, email, and status
+    List<CubeInvitation> findByCubeIdAndEmailAndStatusId(UUID cubeId, String email, Integer statusId);
 }

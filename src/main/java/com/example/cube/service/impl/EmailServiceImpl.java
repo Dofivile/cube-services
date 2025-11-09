@@ -37,9 +37,7 @@ public class EmailServiceImpl implements EmailService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
-    public void sendInvitationEmail(String email, String inviteToken, String cubeName, UUID invitedBy) {
-        String invitationLink = "https://www.cubemoney.io/invitations/accept?token=" + inviteToken;
-
+    public void sendInvitationEmail(String email, String invitationCode, String cubeName, UUID invitedBy) {
         // Resend API endpoint
         String resendApiUrl = "https://api.resend.com/emails";
 
@@ -54,7 +52,7 @@ public class EmailServiceImpl implements EmailService {
         emailBody.put("from", verifiedSender);
         emailBody.put("to", email);
         emailBody.put("subject", "You've been invited to join " + cubeName);
-        emailBody.put("html", buildInvitationEmailHtml(invitationLink, cubeName));
+        emailBody.put("html", buildInvitationEmailHtml(invitationCode, cubeName));
 
         HttpEntity<String> request = new HttpEntity<>(emailBody.toString(), headers);
 
@@ -167,9 +165,9 @@ public class EmailServiceImpl implements EmailService {
     }
 
     /**
-     * Build HTML email template for invitation
+     * Build HTML email template for invitation with invitation code
      */
-    private String buildInvitationEmailHtml(String invitationLink, String cubeName) {
+    private String buildInvitationEmailHtml(String invitationCode, String cubeName) {
         return String.format("""
             <!DOCTYPE html>
             <html>
@@ -188,25 +186,33 @@ public class EmailServiceImpl implements EmailService {
                                         <p style="color: #666; font-size: 16px; line-height: 1.5; margin: 0 0 20px 0;">
                                             You've been invited to join <strong>%s</strong>.
                                         </p>
+                                        <p style="color: #666; font-size: 16px; line-height: 1.5; margin: 0 0 10px 0;">
+                                            Use this invitation code to join:
+                                        </p>
                                         <table width="100%%" cellpadding="0" cellspacing="0">
                                             <tr>
                                                 <td align="center" style="padding: 20px 0;">
-                                                    <a href="%s" 
-                                                       style="display: inline-block; background-color: #4CAF50; color: white; 
-                                                              padding: 14px 30px; text-decoration: none; border-radius: 5px; 
-                                                              font-weight: bold; font-size: 16px;">
-                                                        Accept Invitation
-                                                    </a>
+                                                    <div style="display: inline-block; background-color: #f3f4f6; border: 2px dashed #4CAF50; 
+                                                               padding: 20px 40px; border-radius: 8px;">
+                                                        <p style="margin: 0; color: #666; font-size: 12px; text-transform: uppercase; 
+                                                                  letter-spacing: 1px; margin-bottom: 5px;">Invitation Code</p>
+                                                        <p style="margin: 0; color: #1f2937; font-size: 32px; font-weight: bold; 
+                                                                  letter-spacing: 4px; font-family: 'Courier New', monospace;">
+                                                            %s
+                                                        </p>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </table>
-                                        <p style="color: #999; font-size: 14px; line-height: 1.5; margin: 20px 0 0 0;">
-                                            Or copy and paste this link into your browser:
+                                        <p style="color: #666; font-size: 16px; line-height: 1.5; margin: 20px 0 0 0;">
+                                            <strong>How to join:</strong>
                                         </p>
-                                        <p style="color: #666; font-size: 12px; word-break: break-all; background-color: #f9f9f9; 
-                                                  padding: 10px; border-radius: 4px; margin: 10px 0 20px 0;">
-                                            %s
-                                        </p>
+                                        <ol style="color: #666; font-size: 14px; line-height: 1.8; margin: 10px 0 20px 20px;">
+                                            <li>Download the Cube app or visit cubemoney.io</li>
+                                            <li>Sign up or sign in to your account</li>
+                                            <li>Enter the invitation code above</li>
+                                            <li>Start saving together!</li>
+                                        </ol>
                                         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                                         <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
                                             This invitation will expire in 48 hours.
@@ -219,7 +225,7 @@ public class EmailServiceImpl implements EmailService {
                 </table>
             </body>
             </html>
-            """, cubeName, invitationLink, invitationLink);
+            """, cubeName, invitationCode);
     }
 
     /**

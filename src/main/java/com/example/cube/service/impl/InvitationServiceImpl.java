@@ -2,14 +2,12 @@ package com.example.cube.service.impl;
 
 import com.example.cube.dto.request.AddMembersDirectRequest;
 import com.example.cube.dto.request.InviteMembersRequest;
-import com.example.cube.dto.request.JoinCubeRequest;
 import com.example.cube.dto.response.AddMembersDirectResponse;
 import com.example.cube.dto.response.InviteMembersResponse;
 import com.example.cube.dto.response.JoinCubeResponse;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeInvitation;
 import com.example.cube.model.CubeMember;
-import com.example.cube.dto.response.AcceptInvitationResponse;
 import com.example.cube.repository.CubeInvitationRepository;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.repository.CubeRepository;
@@ -26,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.security.SecureRandom;
 
 @Service
 public class InvitationServiceImpl implements InvitationService {
@@ -82,73 +79,6 @@ public class InvitationServiceImpl implements InvitationService {
         response.setMessage(String.format("Sent %d invitation(s)", successCount));
 
         return response;
-    }
-
-    @Override
-    @Transactional
-    public AcceptInvitationResponse acceptInvitation(String inviteToken, UUID actingUserId) {
-        // 1. Lookup invitation by token
-        CubeInvitation invitation = invitationRepository.findByInviteToken(inviteToken)
-                .orElseThrow(() -> new RuntimeException("Invitation not found or invalid token"));
-
-        // 2. Basic validations
-        if (invitation.getStatusId() != null && invitation.getStatusId() != 1) {
-            throw new RuntimeException("Invitation is not pending");
-        }
-        if (invitation.getExpiresAt() != null && invitation.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
-            throw new RuntimeException("Invitation has expired");
-        }
-
-        // 3. Validate cube exists
-        Cube cube = cubeRepository.findById(invitation.getCubeId())
-                .orElseThrow(() -> new RuntimeException("Cube not found"));
-
-        // 4. Capacity check
-        validateCubeCapacity(cube, 1);
-
-        // 5. If already a member, short-circuit
-        if (cubeMemberRepository.existsByCubeIdAndUserId(cube.getCubeId(), actingUserId)) {
-            // Mark invitation accepted anyway
-            invitation.setStatusId(2); // accepted
-            invitation.setAcceptedAt(java.time.LocalDateTime.now());
-            if (invitation.getInviteeId() == null) {
-                invitation.setInviteeId(actingUserId);
-            }
-            invitationRepository.save(invitation);
-
-            return new AcceptInvitationResponse(
-                    true,
-                    "Already a member",
-                    cube.getCubeId(),
-                    cube.getName(),
-                    cubeMemberRepository.findByCubeIdAndUserId(cube.getCubeId(), actingUserId)
-                            .map(CubeMember::getMemberId)
-                            .orElse(null)
-            );
-        }
-
-        // 6. Create membership
-        CubeMember member = new CubeMember();
-        member.setCubeId(cube.getCubeId());
-        member.setUserId(actingUserId);
-        member.setRoleId(2);
-        cubeMemberRepository.save(member);
-
-        // 7. Mark invitation accepted
-        invitation.setStatusId(2); // accepted
-        invitation.setAcceptedAt(java.time.LocalDateTime.now());
-        if (invitation.getInviteeId() == null) {
-            invitation.setInviteeId(actingUserId);
-        }
-        invitationRepository.save(invitation);
-
-        return new AcceptInvitationResponse(
-                true,
-                "Invitation accepted",
-                cube.getCubeId(),
-                cube.getName(),
-                member.getMemberId()
-        );
     }
 
 
@@ -250,6 +180,9 @@ public class InvitationServiceImpl implements InvitationService {
         member.setRoleId(2); // Regular member role
         cubeMemberRepository.save(member);
 
+        // 5. ✅ Update invitation record (mark as accepted)
+        updateInvitationRecordForUser(cube.getCubeId(), userId);
+
         return new JoinCubeResponse(
                 true,
                 "Successfully joined the cube",
@@ -306,23 +239,21 @@ public class InvitationServiceImpl implements InvitationService {
             return "pending_invitation_exists";
         }
 
-        // 3. Create invitation record
+        // 3. Create invitation record (for tracking purposes)
         CubeInvitation invitation = new CubeInvitation();
         invitation.setCubeId(cubeId);
         invitation.setEmail(email);
         invitation.setStatusId(1);
         invitation.setInvitedBy(invitedBy);
-        // Enforce default member role (2) for invitations
-        invitation.setRoleId(2);
+        invitation.setRoleId(2);  // Enforce default member role
 
         // Set inviteeId if user exists in system
         if (existingUserId != null) {
             invitation.setInviteeId(UUID.fromString(existingUserId));
         }
-        // Otherwise inviteeId stays null (for unregistered users)
 
-        // Generate secure token
-        invitation.setInviteToken(generateInviteToken());
+        // ✅ Use cube's invitation code instead of generating unique token
+        invitation.setInviteToken(cube.getInvitationCode());
 
         // Set expiration (48 hours from now)
         invitation.setExpiresAt(LocalDateTime.now().plusHours(48));
@@ -330,9 +261,9 @@ public class InvitationServiceImpl implements InvitationService {
         // Save to database
         invitationRepository.save(invitation);
 
-        // 4. Send email
+        // 4. Send email with invitation code
         try {
-            emailService.sendInvitationEmail(email, invitation.getInviteToken(),
+            emailService.sendInvitationEmail(email, cube.getInvitationCode(),
                     cube.getName(), invitedBy);
             return "invited";
         } catch (Exception e) {
@@ -340,10 +271,44 @@ public class InvitationServiceImpl implements InvitationService {
         }
     }
 
-    private String generateInviteToken() {
-        // Generate a secure random token
-        return UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
-    }
+    /**
+     * Mark invitation as accepted when user joins via invitation code
+     */
+    private void updateInvitationRecordForUser(UUID cubeId, UUID userId) {
+        try {
+            // ✅ Get user's email from Supabase auth.users table
+            String email = userLookupService.getEmailByUserId(userId.toString());
+            if (email == null) {
+                System.out.println("⚠️ Could not find email for user " + userId + " - invitation record not updated");
+                return;
+            }
 
+            // Find pending invitation(s) for this cube and email
+            List<CubeInvitation> invitations = invitationRepository.findByCubeIdAndEmailAndStatusId(
+                    cubeId,
+                    email,
+                    1  // pending status
+            );
+
+            if (invitations.isEmpty()) {
+                System.out.println("ℹ️ No pending invitation found for " + email + " - user joined directly with code");
+                return;
+            }
+
+            // Mark all matching invitations as accepted
+            for (CubeInvitation invitation : invitations) {
+                invitation.setStatusId(2); // accepted
+                invitation.setAcceptedAt(LocalDateTime.now());
+                invitation.setInviteeId(userId);
+                invitationRepository.save(invitation);
+            }
+
+            System.out.println("✅ Marked " + invitations.size() + " invitation(s) as accepted for " + email);
+
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to update invitation record: " + e.getMessage());
+            // Don't throw - user already joined successfully, this is just record-keeping
+        }
+    }
 
 }
