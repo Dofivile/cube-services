@@ -29,46 +29,11 @@ public class UserDetails {
     @Column(name = "stripe_customer_id", unique = true)
     private String stripeCustomerId;
 
-    @Column(name = "stripe_payment_method_id")
-    private String stripePaymentMethodId; // The ACH payment method ID
-
-    @Column(name = "financial_connections_account_id")
-    private String financialConnectionsAccountId; // The linked bank account ID
-
-    @Column(name = "bank_account_verified")
-    private Boolean bankAccountVerified;
-
     @Column(name = "stripe_account_id", unique = true)
     private String stripeAccountId;
 
     @Column(name = "stripe_payouts_enabled")
     private Boolean stripePayoutsEnabled;
-
-    public String getStripePaymentMethodId() {
-        return stripePaymentMethodId;
-    }
-
-    public String getFinancialConnectionsAccountId() {
-        return financialConnectionsAccountId;
-    }
-
-    public Boolean getBankAccountVerified() {
-        return bankAccountVerified;
-    }
-
-
-    public void setStripePaymentMethodId(String stripePaymentMethodId) {
-        this.stripePaymentMethodId = stripePaymentMethodId;
-    }
-
-    public void setFinancialConnectionsAccountId(String financialConnectionsAccountId) {
-        this.financialConnectionsAccountId = financialConnectionsAccountId;
-    }
-
-    public void setBankAccountVerified(Boolean bankAccountVerified) {
-        this.bankAccountVerified = bankAccountVerified;
-    }
-
 
     public void setStripePayoutsEnabled(Boolean stripePayoutsEnabled) {
         this.stripePayoutsEnabled = stripePayoutsEnabled;
@@ -77,7 +42,7 @@ public class UserDetails {
     public Boolean getStripePayoutsEnabled() {
         return stripePayoutsEnabled;
     }
-// Add getters and setters at the end:
+     // Add getters and setters at the end:
 
     public String getStripeAccountId() {
         return stripeAccountId;

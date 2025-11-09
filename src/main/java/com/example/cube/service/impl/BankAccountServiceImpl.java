@@ -1,8 +1,10 @@
-// New file: BankAccountServiceImpl.java
+// BankAccountServiceImpl.java
 package com.example.cube.service.impl;
 
 import com.example.cube.model.UserDetails;
+import com.example.cube.model.UserPaymentMethod;
 import com.example.cube.repository.UserDetailsRepository;
+import com.example.cube.repository.UserPaymentMethodRepository;
 import com.example.cube.service.BankAccountService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -18,6 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -28,6 +32,9 @@ public class BankAccountServiceImpl implements BankAccountService {
 
     @Autowired
     private UserDetailsRepository userDetailsRepository;
+
+    @Autowired
+    private UserPaymentMethodRepository userPaymentMethodRepository;
 
     @PostConstruct
     public void init() {
@@ -106,18 +113,55 @@ public class BankAccountServiceImpl implements BankAccountService {
                     .build();
             customer.update(params);
 
-            // Get Financial Connections account ID
+            // Get Financial Connections account ID and bank details
             String fcAccountId = paymentMethod.getUsBankAccount().getFinancialConnectionsAccount();
+            String bankName = paymentMethod.getUsBankAccount().getBankName();
+            String last4 = paymentMethod.getUsBankAccount().getLast4();
 
-            // Save details
-            user.setStripePaymentMethodId(paymentMethodId);
-            user.setFinancialConnectionsAccountId(fcAccountId);
-            user.setBankAccountVerified(true);
+            // ✅ NEW: Check if this payment method already exists
+            Optional<UserPaymentMethod> existingMethod = 
+                    userPaymentMethodRepository.findByStripePaymentMethodId(paymentMethodId);
 
-            userDetailsRepository.save(user);
+            UserPaymentMethod userPaymentMethod;
+            if (existingMethod.isPresent()) {
+                // Update existing record
+                userPaymentMethod = existingMethod.get();
+                System.out.println("📝 Updating existing payment method: " + paymentMethodId);
+            } else {
+                // Create new record
+                userPaymentMethod = new UserPaymentMethod();
+                userPaymentMethod.setUserId(userId);
+                userPaymentMethod.setStripePaymentMethodId(paymentMethodId);
+                System.out.println("✨ Creating new payment method record");
+            }
+
+            // Set/update fields
+            userPaymentMethod.setFinancialConnectionsAccountId(fcAccountId);
+            userPaymentMethod.setBankName(bankName);
+            userPaymentMethod.setLast4(last4);
+            userPaymentMethod.setBankAccountVerified(true);
+
+            // ✅ Set as default if this is the user's first payment method
+            List<UserPaymentMethod> userMethods = userPaymentMethodRepository.findByUserId(userId);
+            if (userMethods.isEmpty()) {
+                userPaymentMethod.setIsDefault(true);
+                System.out.println("⭐ Setting as default (first payment method)");
+            } else {
+                // If no default exists, make this one default
+                Optional<UserPaymentMethod> currentDefault = 
+                        userPaymentMethodRepository.findByUserIdAndIsDefaultTrue(userId);
+                if (currentDefault.isEmpty() && !existingMethod.isPresent()) {
+                    userPaymentMethod.setIsDefault(true);
+                    System.out.println("⭐ Setting as default (no default exists)");
+                }
+            }
+
+            userPaymentMethodRepository.save(userPaymentMethod);
 
             System.out.println("✅ Bank account linked for user: " + userId);
             System.out.println("   Payment Method: " + paymentMethodId);
+            System.out.println("   Bank: " + bankName + " ****" + last4);
+            System.out.println("   Is Default: " + userPaymentMethod.getIsDefault());
 
         } catch (StripeException e) {
             throw new RuntimeException("Failed to retrieve payment method: " + e.getMessage());
@@ -126,10 +170,6 @@ public class BankAccountServiceImpl implements BankAccountService {
 
     @Override
     public boolean userHasBankAccountLinked(UUID userId) {
-        UserDetails user = userDetailsRepository.findById(userId).orElse(null);
-        return user != null &&
-                user.getStripePaymentMethodId() != null &&
-                user.getBankAccountVerified() != null &&
-                user.getBankAccountVerified();
+        return userPaymentMethodRepository.existsByUserIdAndBankAccountVerifiedTrue(userId);
     }
 }

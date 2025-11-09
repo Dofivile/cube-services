@@ -42,7 +42,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
     private PaymentTransactionRepository paymentTransactionRepository;
 
     @Autowired
-    private UserDetailsRepository userDetailsRepositoryRepository;
+    private UserPaymentMethodRepository userPaymentMethodRepository;
 
     @PostConstruct
     public void init() {
@@ -71,15 +71,12 @@ public class StripePaymentServiceImpl implements StripePaymentService {
 
         String customerId = getOrCreateCustomer(userId);
 
-        // NEW: Get the saved payment method from user record
-        UserDetails user = userDetailsRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // ✅ NEW: Get the saved payment method from user_payment_methods table
+        UserPaymentMethod defaultPaymentMethod = userPaymentMethodRepository
+                .findByUserIdAndIsDefaultTrue(userId)
+                .orElseThrow(() -> new RuntimeException("No payment method linked. Please link a bank account first."));
 
-        String paymentMethodId = user.getStripePaymentMethodId();
-
-        if (paymentMethodId == null) {
-            throw new RuntimeException("No bank account linked. Please link a bank account first.");
-        }
+        String paymentMethodId = defaultPaymentMethod.getStripePaymentMethodId();
 
         BigDecimal amountInDollars = cube.getAmountPerCycle();
         long amountInCents = amountInDollars.multiply(new BigDecimal("100")).longValue();
@@ -95,9 +92,9 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     .setAmount(amountInCents)
                     .setCurrency("usd")
                     .setCustomer(customerId)
-                    .setPaymentMethod(paymentMethodId)  // NEW: Use the saved payment method
-                    .addPaymentMethodType("us_bank_account")  // NEW: Specify ACH
-                    .setPaymentMethodOptions(  // NEW: ACH configuration
+                    .setPaymentMethod(paymentMethodId)  // Use the saved payment method
+                    .addPaymentMethodType("us_bank_account")  // Specify ACH
+                    .setPaymentMethodOptions(  // ACH configuration
                             PaymentIntentCreateParams.PaymentMethodOptions.builder()
                                     .setUsBankAccount(
                                             PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount.builder()
@@ -193,7 +190,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             );
             cubeRepository.save(cube);
 
-            // ✅ ADD: Update member status to "paid" (status_id = 2)
+            // ✅ Update member status to "paid" (status_id = 2)
             CubeMember member = cubeMemberRepository.findById(memberId)
                     .orElse(null);
             if (member != null) {
