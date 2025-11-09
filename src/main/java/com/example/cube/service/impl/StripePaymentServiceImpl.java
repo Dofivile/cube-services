@@ -193,6 +193,15 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             );
             cubeRepository.save(cube);
 
+            // ✅ ADD: Update member status to "paid" (status_id = 2)
+            CubeMember member = cubeMemberRepository.findById(memberId)
+                    .orElse(null);
+            if (member != null) {
+                member.setStatusId(2);  // 2 = "paid"
+                cubeMemberRepository.save(member);
+                System.out.println("✅ Member status updated to 'paid'");
+            }
+
             System.out.println("✅ Payment recorded: " + paymentIntentId +
                     " | Cube: " + cube.getName() +
                     " | Amount: $" + transaction.getAmount() +

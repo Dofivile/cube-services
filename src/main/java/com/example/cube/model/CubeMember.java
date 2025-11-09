@@ -24,6 +24,10 @@ public class CubeMember {
     @Column(name = "role_id", nullable= false)
     private Integer roleId;
 
+    // ✅ ADD: Payment status for current cycle
+    @Column(name = "status_id", nullable = false)
+    private Integer statusId = 1;  // Default: 1 = "awaiting payment"
+
     // ========== Timestamps ==========
     @Column(name = "joined_at")
     private LocalDateTime joinedAt = LocalDateTime.now();
@@ -51,6 +55,10 @@ public class CubeMember {
 
     public Integer getRoleId() { return roleId; }
     public void setRoleId(Integer roleId) { this.roleId = roleId; }
+
+    // ✅ ADD: Getter and Setter for statusId
+    public Integer getStatusId() { return statusId; }
+    public void setStatusId(Integer statusId) { this.statusId = statusId; }
 
     public LocalDateTime getJoinedAt() { return joinedAt; }
     public void setJoinedAt(LocalDateTime joinedAt) { this.joinedAt = joinedAt; }
