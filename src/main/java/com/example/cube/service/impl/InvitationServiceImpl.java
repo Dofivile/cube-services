@@ -225,16 +225,7 @@ public class InvitationServiceImpl implements InvitationService {
 
     private String createSingleInvitation(UUID cubeId, String email,
                                           UUID invitedBy, Cube cube) {
-        // 1. Check if user with this email is already a member
-        String existingUserId = userLookupService.getUserIdByEmail(email);
-        if (existingUserId != null) {
-            UUID userId = UUID.fromString(existingUserId);
-            if (cubeMemberRepository.existsByCubeIdAndUserId(cubeId, userId)) {
-                return "already_member";
-            }
-        }
-
-        // 2. Check if pending invitation already exists
+        
         if (invitationRepository.existsByEmailAndCubeIdAndStatusId(email, cubeId, 1)) {
             return "pending_invitation_exists";
         }
@@ -243,16 +234,14 @@ public class InvitationServiceImpl implements InvitationService {
         CubeInvitation invitation = new CubeInvitation();
         invitation.setCubeId(cubeId);
         invitation.setEmail(email);
-        invitation.setStatusId(1);
+        invitation.setStatusId(1);  // pending
         invitation.setInvitedBy(invitedBy);
         invitation.setRoleId(2);  // Enforce default member role
 
-        // Set inviteeId if user exists in system
-        if (existingUserId != null) {
-            invitation.setInviteeId(UUID.fromString(existingUserId));
-        }
+        // ✅ REMOVED: Don't pre-populate inviteeId - will be set when they join
+        // inviteeId stays NULL until user creates account and joins
 
-        // ✅ Use cube's invitation code instead of generating unique token
+        // Use cube's invitation code
         invitation.setInviteToken(cube.getInvitationCode());
 
         // Set expiration (48 hours from now)
