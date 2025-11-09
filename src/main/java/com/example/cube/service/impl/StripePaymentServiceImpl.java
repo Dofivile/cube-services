@@ -199,7 +199,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             if (member != null) {
                 member.setStatusId(2);  // 2 = "paid"
                 cubeMemberRepository.save(member);
-                System.out.println("✅ Member status updated to 'paid'");
+                System.out.println("✅ Member " + memberId + " marked as PAID for cycle " + cycleNumber);
             }
 
             System.out.println("✅ Payment recorded: " + paymentIntentId +

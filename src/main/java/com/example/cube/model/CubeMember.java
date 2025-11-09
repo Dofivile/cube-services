@@ -26,7 +26,7 @@ public class CubeMember {
 
     // ✅ ADD: Payment status for current cycle
     @Column(name = "status_id", nullable = false)
-    private Integer statusId = 1;  // Default: 1 = "awaiting payment"
+    private Integer statusId = 1;  // Default: 1 = "has not paid"
 
     // ========== Timestamps ==========
     @Column(name = "joined_at")

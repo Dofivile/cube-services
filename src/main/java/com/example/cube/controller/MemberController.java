@@ -74,9 +74,9 @@ public class MemberController {
                     info.setHasReceivedPayout(member.getHasReceivedPayout());
                     info.setPayoutPosition(member.getPayoutPosition());
                     
-                    // ✅ ADD: Payment status
+                    // ✅ ADD: Map payment status
                     info.setStatusId(member.getStatusId());
-                    info.setPaymentStatus(member.getStatusId() == 2 ? "paid" : "awaiting payment");
+                    info.setPaymentStatus(member.getStatusId() == 2 ? "paid" : "has not paid");
                     
                     // Populate names from user_details if available
                     UserDetails ud = userDetailsRepository.findById(member.getUserId()).orElse(null);

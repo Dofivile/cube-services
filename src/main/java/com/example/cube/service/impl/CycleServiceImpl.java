@@ -174,13 +174,13 @@ public class CycleServiceImpl implements CycleService {
         System.out.println("   Winner: " + winner.getUserId());
         System.out.println("   Amount: $" + payoutAmount);
 
-        // ✅ ADD: Reset all member statuses to "awaiting payment" for next cycle
-        resetMemberStatusesForNewCycle(cubeId);
-
-        // ✅ ADD: Increment cycle number
+        // ✅ ADD: Increment cycle number BEFORE resetting statuses
         cube.setCurrentCycle(currentCycle + 1);
         cube.setNextPayoutDate(calculateNextPayoutDate(cube));
         cubeRepository.save(cube);
+
+        // ✅ ADD: Reset all member payment statuses for the new cycle
+        resetMemberPaymentStatuses(cubeId);
 
         // 9. Send notification emails to all members and admin
         try {
@@ -228,12 +228,14 @@ public class CycleServiceImpl implements CycleService {
     }
 
     // ✅ ADD: Helper method to reset all member payment statuses
-    private void resetMemberStatusesForNewCycle(UUID cubeId) {
+    private void resetMemberPaymentStatuses(UUID cubeId) {
         List<CubeMember> members = cubeMemberRepository.findByCubeId(cubeId);
+        
         for (CubeMember member : members) {
-            member.setStatusId(1);  // Reset to "awaiting payment"
+            member.setStatusId(1);  // Reset to "has not paid"
         }
+        
         cubeMemberRepository.saveAll(members);
-        System.out.println("✅ Reset payment status for " + members.size() + " members");
+        System.out.println("✅ Reset payment status to 'has not paid' for " + members.size() + " members");
     }
 }
