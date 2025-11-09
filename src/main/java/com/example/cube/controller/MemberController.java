@@ -5,12 +5,10 @@ import com.example.cube.dto.request.VerifyAdminRequest;
 import com.example.cube.dto.response.GetCubeMembersResponse;
 import com.example.cube.dto.response.InviteMembersResponse;
 import com.example.cube.dto.response.VerifyAdminResponse;
-import com.example.cube.model.Cube;
+import com.example.cube.mapper.MemberMapper;  // ✅ ADD
 import com.example.cube.model.CubeMember;
 import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.security.AuthenticationService;
-import com.example.cube.repository.UserDetailsRepository;
-import com.example.cube.model.UserDetails;
 import com.example.cube.service.InvitationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,20 +23,20 @@ import java.util.UUID;
 @RequestMapping("/api/members")
 public class MemberController {
 
-    private final InvitationService invitationService;  // ← Changed from MemberService
+    private final InvitationService invitationService;
     private final AuthenticationService authenticationService;
     private final CubeMemberRepository cubeMemberRepository;
-    private final UserDetailsRepository userDetailsRepository;
+    private final MemberMapper memberMapper;  // ✅ ADD
 
     @Autowired
-    public MemberController(InvitationService invitationService,  // ← Changed
+    public MemberController(InvitationService invitationService,
                             AuthenticationService authenticationService,
                             CubeMemberRepository cubeMemberRepository,
-                            UserDetailsRepository userDetailsRepository) {
+                            MemberMapper memberMapper) {  // ✅ ADD
         this.invitationService = invitationService;
         this.authenticationService = authenticationService;
         this.cubeMemberRepository = cubeMemberRepository;
-        this.userDetailsRepository = userDetailsRepository;
+        this.memberMapper = memberMapper;  // ✅ ADD
     }
 
     @PostMapping("/invite")
@@ -63,29 +61,9 @@ public class MemberController {
         // Get all members for this cube
         List<CubeMember> members = cubeMemberRepository.findByCubeId(cubeId);
 
-        // Map to response
+        // ✅ REPLACE the entire stream with mapper call
         List<GetCubeMembersResponse.MemberInfo> memberInfoList = members.stream()
-                .map(member -> {
-                    GetCubeMembersResponse.MemberInfo info = new GetCubeMembersResponse.MemberInfo();
-                    info.setUserId(member.getUserId());
-                    info.setMemberId(member.getMemberId());
-                    info.setRoleName(member.getRoleId() == 1 ? "admin" : "member");
-                    info.setJoinedAt(member.getJoinedAt());
-                    info.setHasReceivedPayout(member.getHasReceivedPayout());
-                    info.setPayoutPosition(member.getPayoutPosition());
-                    
-                    // ✅ ADD: Map payment status
-                    info.setStatusId(member.getStatusId());
-                    info.setPaymentStatus(member.getStatusId() == 2 ? "paid" : "has not paid");
-                    
-                    // Populate names from user_details if available
-                    UserDetails ud = userDetailsRepository.findById(member.getUserId()).orElse(null);
-                    if (ud != null) {
-                        info.setFirstName(ud.getFirstName());
-                        info.setLastName(ud.getLastName());
-                    }
-                    return info;
-                })
+                .map(memberMapper::toMemberInfo)
                 .toList();
 
         GetCubeMembersResponse response = new GetCubeMembersResponse(
@@ -102,13 +80,13 @@ public class MemberController {
             @RequestHeader("Authorization") String authHeader,
             @RequestBody VerifyAdminRequest request) {
 
-        // ✅ Extract user ID from auth token
+        // Extract user ID from auth token
         UUID userId = authenticationService.validateAndExtractUserId(authHeader);
 
         // Query cube_members table by authenticated user_id and cube_id
         Optional<CubeMember> memberOpt = cubeMemberRepository.findByCubeIdAndUserId(
                 request.getCubeId(),
-                userId  // ✅ Use authenticated user's ID
+                userId
         );
 
         // Check if member exists and if role_id = 1 (admin)
