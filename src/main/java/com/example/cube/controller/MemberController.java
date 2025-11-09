@@ -97,13 +97,13 @@ public class MemberController {
             @RequestHeader("Authorization") String authHeader,
             @RequestBody VerifyAdminRequest request) {
 
-        // Validate auth token
-        authenticationService.validateAndExtractUserId(authHeader);
+        // ✅ Extract user ID from auth token
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
 
-        // Query cube_members table by user_id and cube_id
+        // Query cube_members table by authenticated user_id and cube_id
         Optional<CubeMember> memberOpt = cubeMemberRepository.findByCubeIdAndUserId(
                 request.getCubeId(),
-                request.getUserId()
+                userId  // ✅ Use authenticated user's ID
         );
 
         // Check if member exists and if role_id = 1 (admin)

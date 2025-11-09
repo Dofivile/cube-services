@@ -1,28 +1,20 @@
 package com.example.cube.dto.request;
 
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public class VerifyAdminRequest {
 
-    private UUID userId;
+    @NotNull
     private UUID cubeId;
 
     public VerifyAdminRequest() {}
 
-    public VerifyAdminRequest(UUID userId, UUID cubeId) {
-        this.userId = userId;
+    public VerifyAdminRequest(UUID cubeId) {
         this.cubeId = cubeId;
     }
 
     // Getters and Setters
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public void setUserId(UUID userId) {
-        this.userId = userId;
-    }
-
     public UUID getCubeId() {
         return cubeId;
     }

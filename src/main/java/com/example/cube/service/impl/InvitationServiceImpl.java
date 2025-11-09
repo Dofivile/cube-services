@@ -57,9 +57,12 @@ public class InvitationServiceImpl implements InvitationService {
         Cube cube = cubeRepository.findById(cubeId)
                 .orElseThrow(() -> new RuntimeException("Cube not found"));
 
-        // 2. Validate inviter has permission
-        if (!cubeMemberRepository.existsByCubeIdAndUserId(cubeId, invitedBy)) {
-            throw new RuntimeException("You don't have permission to invite members to this cube");
+        // 2. ✅ Validate inviter is an ADMIN
+        CubeMember inviterMember = cubeMemberRepository.findByCubeIdAndUserId(cubeId, invitedBy)
+                .orElseThrow(() -> new RuntimeException("You are not a member of this cube"));
+        
+        if (inviterMember.getRoleId() != 1) {
+            throw new RuntimeException("Only admins can invite members to this cube");
         }
 
         // 3. Validate cube capacity
