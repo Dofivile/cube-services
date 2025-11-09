@@ -69,10 +69,15 @@ public class MemberController {
                     GetCubeMembersResponse.MemberInfo info = new GetCubeMembersResponse.MemberInfo();
                     info.setUserId(member.getUserId());
                     info.setMemberId(member.getMemberId());
-                    info.setRoleName(member.getRoleId() == 1 ? "admin" : "member");  // 1=admin, 2=member
+                    info.setRoleName(member.getRoleId() == 1 ? "admin" : "member");
                     info.setJoinedAt(member.getJoinedAt());
                     info.setHasReceivedPayout(member.getHasReceivedPayout());
                     info.setPayoutPosition(member.getPayoutPosition());
+                    
+                    // ✅ ADD: Payment status
+                    info.setStatusId(member.getStatusId());
+                    info.setPaymentStatus(member.getStatusId() == 2 ? "paid" : "awaiting payment");
+                    
                     // Populate names from user_details if available
                     UserDetails ud = userDetailsRepository.findById(member.getUserId()).orElse(null);
                     if (ud != null) {

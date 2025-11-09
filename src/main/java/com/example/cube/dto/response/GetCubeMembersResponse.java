@@ -28,10 +28,14 @@ public class GetCubeMembersResponse {
         private LocalDateTime joinedAt;
         private Boolean hasReceivedPayout;
         private Integer payoutPosition;
+        
+        // ✅ ADD: Payment status fields
+        private Integer statusId;  // 1 = awaiting payment, 2 = paid
+        private String paymentStatus;  // "awaiting payment" or "paid"
 
         public MemberInfo() {}
 
-        // Getters and Setters
+        // Existing Getters and Setters
         public UUID getUserId() { return userId; }
         public void setUserId(UUID userId) { this.userId = userId; }
 
@@ -55,6 +59,13 @@ public class GetCubeMembersResponse {
 
         public Integer getPayoutPosition() { return payoutPosition; }
         public void setPayoutPosition(Integer payoutPosition) { this.payoutPosition = payoutPosition; }
+
+        // ✅ ADD: New Getters and Setters
+        public Integer getStatusId() { return statusId; }
+        public void setStatusId(Integer statusId) { this.statusId = statusId; }
+
+        public String getPaymentStatus() { return paymentStatus; }
+        public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
     }
 
     // Getters and Setters
