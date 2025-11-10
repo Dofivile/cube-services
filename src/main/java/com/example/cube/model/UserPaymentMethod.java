@@ -37,6 +37,18 @@ public class UserPaymentMethod {
     @Column(name = "bank_account_verified")
     private Boolean bankAccountVerified = false;
 
+    @Column(name = "mandate_id")
+    private String mandateId;
+
+    // Add getter and setter
+    public String getMandateId() {
+        return mandateId;
+    }
+
+    public void setMandateId(String mandateId) {
+        this.mandateId = mandateId;
+    }
+
     // Getters and Setters
     public UUID getId() {
         return id;
