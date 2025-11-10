@@ -82,58 +82,76 @@ public class StripePaymentServiceImpl implements StripePaymentService {
         long amountInCents = amountInDollars.multiply(new BigDecimal("100")).longValue();
 
         try {
-    Map<String, String> metadata = new HashMap<>();
-    metadata.put("user_id", userId.toString());
-    metadata.put("cube_id", cubeId.toString());
-    metadata.put("member_id", memberId.toString());
-    metadata.put("cycle_number", cycleNumber.toString());
+            Map<String, String> metadata = new HashMap<>();
+            metadata.put("user_id", userId.toString());
+            metadata.put("cube_id", cubeId.toString());
+            metadata.put("member_id", memberId.toString());
+            metadata.put("cycle_number", cycleNumber.toString());
 
     // ✅ Build payment intent params with mandate
     PaymentIntentCreateParams.Builder paramsBuilder = PaymentIntentCreateParams.builder()
-            .setAmount(amountInCents)
-            .setCurrency("usd")
-            .setCustomer(customerId)
+                    .setAmount(amountInCents)
+                    .setCurrency("usd")
+                    .setCustomer(customerId)
             .setPaymentMethod(paymentMethodId)
             .addPaymentMethodType("us_bank_account")
             .setConfirm(true)
             .setPaymentMethodOptions(
-                    PaymentIntentCreateParams.PaymentMethodOptions.builder()
-                            .setUsBankAccount(
-                                    PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount.builder()
-                                            .setVerificationMethod(PaymentIntentCreateParams.PaymentMethodOptions
-                                                    .UsBankAccount.VerificationMethod.INSTANT)
-                                            .build()
-                            )
-                            .build()
-            )
-            .setConfirmationMethod(PaymentIntentCreateParams.ConfirmationMethod.MANUAL)
-            .putAllMetadata(metadata)
+                            PaymentIntentCreateParams.PaymentMethodOptions.builder()
+                                    .setUsBankAccount(
+                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount.builder()
+                                                    .setFinancialConnections(
+                                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount
+                                                                    .FinancialConnections.builder()
+                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
+                                                                            .UsBankAccount.FinancialConnections.Permission.PAYMENT_METHOD)
+                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
+                                                                            .UsBankAccount.FinancialConnections.Permission.BALANCES)
+                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
+                                                                            .UsBankAccount.FinancialConnections.Permission.OWNERSHIP)
+                                                                    .build()
+                                                    )
+                                                    .setVerificationMethod(PaymentIntentCreateParams.PaymentMethodOptions
+                                                            .UsBankAccount.VerificationMethod.INSTANT)
+                                                    .build()
+                                    )
+                                    .build()
+                    )
+                    .setMandateData(
+                            PaymentIntentCreateParams.MandateData.builder()
+                                    .setCustomerAcceptance(
+                                            PaymentIntentCreateParams.MandateData.CustomerAcceptance.builder()
+                                                    .setType(PaymentIntentCreateParams.MandateData.CustomerAcceptance.Type.ONLINE)
+                                                    .setOnline(
+                                                            PaymentIntentCreateParams.MandateData.CustomerAcceptance.Online.builder()
+                                                                    .setIpAddress("0.0.0.0")  // TODO: Capture actual user IP
+                                                                    .setUserAgent("CubeApp/1.0")  // TODO: Capture actual user agent
+                                                                    .build()
+                                                    )
+                                                    .build()
+                                    )
+                                    .build()
+                    )
+                    .putAllMetadata(metadata)
             .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber);
 
-    // ✅ Add mandate if available
-    if (defaultPaymentMethod.getMandateId() != null) {
-        paramsBuilder.setMandate(defaultPaymentMethod.getMandateId());
-        System.out.println("✅ Using mandate: " + defaultPaymentMethod.getMandateId());
-    } else {
-        System.err.println("⚠️ No mandate found for payment method. Payment may fail.");
-    }
 
     PaymentIntentCreateParams params = paramsBuilder.build();
-    PaymentIntent paymentIntent = PaymentIntent.create(params);
+            PaymentIntent paymentIntent = PaymentIntent.create(params);
 
     System.out.println("✅ PaymentIntent created: " + paymentIntent.getId());
     System.out.println("   Status: " + paymentIntent.getStatus());
     System.out.println("   Mandate: " + defaultPaymentMethod.getMandateId());
 
-    return new PaymentIntentResponse(
-            paymentIntent.getClientSecret(),
-            paymentIntent.getId(),
-            customerId
-    );
+            return new PaymentIntentResponse(
+                    paymentIntent.getClientSecret(),
+                    paymentIntent.getId(),
+                    customerId
+            );
 
-} catch (StripeException e) {
-    throw new RuntimeException("Failed to create payment intent: " + e.getMessage());
-}
+        } catch (StripeException e) {
+            throw new RuntimeException("Failed to create payment intent: " + e.getMessage());
+        }
     }
 
     @Override
