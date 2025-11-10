@@ -104,8 +104,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                                     )
                                     .build()
                     )
-                    .setConfirm(true)  // ✅ ADD: Actually confirm/charge the payment immediately
-                    .setOffSession(true)  // ✅ ADD: Allow charging without customer present (for recurring payments)
+                    .setConfirmationMethod(PaymentIntentCreateParams.ConfirmationMethod.MANUAL)  // ✅ Manual confirmation
                     .putAllMetadata(metadata)
                     .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
                     .build();
