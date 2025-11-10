@@ -92,30 +92,20 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     .setAmount(amountInCents)
                     .setCurrency("usd")
                     .setCustomer(customerId)
-                    .setPaymentMethod(paymentMethodId)  // Use the saved payment method
-                    .addPaymentMethodType("us_bank_account")  // Specify ACH
-                    .setPaymentMethodOptions(  // ACH configuration
+                    .setPaymentMethod(paymentMethodId)
+                    .addPaymentMethodType("us_bank_account")
+                    .setPaymentMethodOptions(
                             PaymentIntentCreateParams.PaymentMethodOptions.builder()
                                     .setUsBankAccount(
                                             PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount.builder()
-                                                    .setFinancialConnections(
-                                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount
-                                                                    .FinancialConnections.builder()
-                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
-                                                                            .UsBankAccount.FinancialConnections.Permission.PAYMENT_METHOD)
-                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
-                                                                            .UsBankAccount.FinancialConnections.Permission.BALANCES)
-                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
-                                                                            .UsBankAccount.FinancialConnections.Permission.OWNERSHIP)
-                                                                    .build()
-                                                    )
                                                     .setVerificationMethod(PaymentIntentCreateParams.PaymentMethodOptions
                                                             .UsBankAccount.VerificationMethod.INSTANT)
                                                     .build()
                                     )
                                     .build()
                     )
-                    .setConfirmationMethod(PaymentIntentCreateParams.ConfirmationMethod.AUTOMATIC)
+                    .setConfirm(true)  // ✅ ADD: Actually confirm/charge the payment immediately
+                    .setOffSession(true)  // ✅ ADD: Allow charging without customer present (for recurring payments)
                     .putAllMetadata(metadata)
                     .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
                     .build();
