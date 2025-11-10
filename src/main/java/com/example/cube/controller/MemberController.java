@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -95,5 +96,40 @@ public class MemberController {
         VerifyAdminResponse response = new VerifyAdminResponse(isAdmin);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get the current user's membership details for a specific cube
+     * Returns memberId, userId, cubeId, role, and payment status
+     */
+    @GetMapping("/my-membership/{cubeId}")
+    public ResponseEntity<?> getMyMembership(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable UUID cubeId) {
+
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+
+        Optional<CubeMember> memberOpt = cubeMemberRepository.findByCubeIdAndUserId(cubeId, userId);
+
+        if (memberOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "Membership not found",
+                    "message", "You are not a member of this cube"
+            ));
+        }
+
+        CubeMember member = memberOpt.get();
+
+        return ResponseEntity.ok(Map.of(
+                "memberId", member.getMemberId(),
+                "userId", member.getUserId(),
+                "cubeId", member.getCubeId(),
+                "roleId", member.getRoleId(),
+                "roleName", member.getRoleId() == 1 ? "admin" : "member",
+                "payoutPosition", member.getPayoutPosition() != null ? member.getPayoutPosition() : 0,
+                "statusId", member.getStatusId(),
+                "paymentStatus", member.getStatusId() == 2 ? "Paid" : "Has Not Paid",
+                "hasReceivedPayout", member.getHasReceivedPayout()
+        ));
     }
 }
