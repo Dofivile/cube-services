@@ -80,4 +80,28 @@ public class BankAccountController {
 
         return ResponseEntity.ok(status);
     }
+
+    /**
+     * Delete a linked bank account/payment method
+     */
+    @DeleteMapping("/payment-method/{paymentMethodId}")
+    public ResponseEntity<Map<String, Object>> deleteBankAccount(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable String paymentMethodId) {
+
+        if (paymentMethodId == null || paymentMethodId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Payment method ID is required"
+            ));
+        }
+
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+        bankAccountService.deleteBankAccount(userId, paymentMethodId);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Bank account deleted successfully"
+        ));
+    }
 }

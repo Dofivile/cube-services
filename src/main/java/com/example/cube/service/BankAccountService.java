@@ -9,4 +9,5 @@ public interface BankAccountService {
     void saveBankAccountDetails(UUID userId, String paymentMethodId);
     boolean userHasBankAccountLinked(UUID userId);
     BankAccountStatusResponse getBankAccountStatus(UUID userId);
+    void deleteBankAccount(UUID userId, String paymentMethodId);
 }

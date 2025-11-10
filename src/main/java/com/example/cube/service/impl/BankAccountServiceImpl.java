@@ -182,7 +182,8 @@ public class BankAccountServiceImpl implements BankAccountService {
                     method.getBankName(),
                     method.getLast4(),
                     method.getIsDefault(),
-                    method.getBankAccountVerified()
+                    method.getBankAccountVerified(),
+                    method.getStripePaymentMethodId()
             );
         }
 
@@ -199,16 +200,85 @@ public class BankAccountServiceImpl implements BankAccountService {
                     method.getBankName(),
                     method.getLast4(),
                     method.getIsDefault(),
-                    method.getBankAccountVerified()
+                    method.getBankAccountVerified(),
+                    method.getStripePaymentMethodId()
             );
         }
 
         // No bank account linked
-        return new BankAccountStatusResponse(false, null, null, null, null);
+        return new BankAccountStatusResponse(false, null, null, null, null, null);
     }
 
     @Override
     public boolean userHasBankAccountLinked(UUID userId) {
         return userPaymentMethodRepository.existsByUserIdAndBankAccountVerifiedTrue(userId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteBankAccount(UUID userId, String paymentMethodId) {
+        if (paymentMethodId == null || paymentMethodId.isBlank()) {
+            throw new IllegalArgumentException("Payment method ID is required");
+        }
+
+        UserDetails user = userDetailsRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserPaymentMethod method = userPaymentMethodRepository
+                .findByUserIdAndStripePaymentMethodId(userId, paymentMethodId)
+                .orElseThrow(() -> new RuntimeException("Payment method not found for user"));
+
+        try {
+            PaymentMethod stripePaymentMethod = PaymentMethod.retrieve(paymentMethodId);
+
+            if (stripePaymentMethod.getCustomer() != null &&
+                    !stripePaymentMethod.getCustomer().equals(user.getStripeCustomerId())) {
+                throw new RuntimeException("Payment method does not belong to this user");
+            }
+
+            stripePaymentMethod.detach();
+        } catch (StripeException e) {
+            throw new RuntimeException("Failed to detach payment method: " + e.getMessage());
+        }
+
+        boolean wasDefault = method.getIsDefault() != null && method.getIsDefault();
+        userPaymentMethodRepository.delete(method);
+
+        if (wasDefault) {
+            Optional<UserPaymentMethod> nextDefault =
+                    userPaymentMethodRepository.findFirstByUserIdOrderByCreatedAtDesc(userId);
+
+            if (nextDefault.isPresent()) {
+                UserPaymentMethod newDefault = nextDefault.get();
+                newDefault.setIsDefault(true);
+                userPaymentMethodRepository.save(newDefault);
+                updateStripeCustomerDefaultPaymentMethod(user.getStripeCustomerId(), newDefault.getStripePaymentMethodId());
+            } else {
+                // No methods left, clear Stripe default
+                updateStripeCustomerDefaultPaymentMethod(user.getStripeCustomerId(), null);
+            }
+        }
+    }
+
+    private void updateStripeCustomerDefaultPaymentMethod(String customerId, String paymentMethodId) {
+        try {
+            Customer customer = Customer.retrieve(customerId);
+            CustomerUpdateParams.InvoiceSettings.Builder invoiceSettingsBuilder =
+                    CustomerUpdateParams.InvoiceSettings.builder();
+
+            if (paymentMethodId == null) {
+                invoiceSettingsBuilder.setDefaultPaymentMethod((String) null);
+            } else {
+                invoiceSettingsBuilder.setDefaultPaymentMethod(paymentMethodId);
+            }
+
+            CustomerUpdateParams params = CustomerUpdateParams.builder()
+                    .setInvoiceSettings(invoiceSettingsBuilder.build())
+                    .build();
+
+            customer.update(params);
+        } catch (StripeException e) {
+            throw new RuntimeException("Failed to update Stripe customer default payment method: " + e.getMessage());
+        }
     }
 }

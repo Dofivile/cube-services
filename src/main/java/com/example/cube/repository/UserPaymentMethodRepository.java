@@ -20,6 +20,12 @@ public interface UserPaymentMethodRepository extends JpaRepository<UserPaymentMe
     // Find by payment method ID
     Optional<UserPaymentMethod> findByStripePaymentMethodId(String stripePaymentMethodId);
 
+    // Find by user and payment method ID
+    Optional<UserPaymentMethod> findByUserIdAndStripePaymentMethodId(UUID userId, String stripePaymentMethodId);
+
+    // Grab the most recently created method (used to promote new default)
+    Optional<UserPaymentMethod> findFirstByUserIdOrderByCreatedAtDesc(UUID userId);
+
     // Check if user has any verified payment method
     boolean existsByUserIdAndBankAccountVerifiedTrue(UUID userId);
 }
