@@ -94,6 +94,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     .setCustomer(customerId)
                     .setPaymentMethod(paymentMethodId)
                     .addPaymentMethodType("us_bank_account")
+                    .setConfirm(true)
                     .setPaymentMethodOptions(
                             PaymentIntentCreateParams.PaymentMethodOptions.builder()
                                     .setUsBankAccount(
