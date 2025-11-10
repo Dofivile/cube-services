@@ -34,6 +34,9 @@ public class StripeController {
     @Value("${stripe.webhook.secret}")
     private String webhookSecret;
 
+    @Value("${stripe.webhook.secret.connect}")
+    private String webhookSecretConnect;
+
     private final StripePaymentService stripePaymentService;
     private final StripeConnectService stripeConnectService;
     private final PayoutService payoutService;
@@ -213,16 +216,31 @@ public class StripeController {
     }
     // ==================== WEBHOOK HANDLING ====================
 
+    // Webhook for regular platform events (fascinating-inspiration)
     @PostMapping("/webhook")
     public ResponseEntity<String> handleWebhook(
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String sigHeader) {
+        
+        return processWebhook(payload, sigHeader, webhookSecret);
+    }
 
+    // Webhook for Connect account events (charismatic-splendor)
+    @PostMapping("/webhook/connect")
+    public ResponseEntity<String> handleConnectWebhook(
+            @RequestBody String payload,
+            @RequestHeader("Stripe-Signature") String sigHeader) {
+        
+        return processWebhook(payload, sigHeader, webhookSecretConnect);
+    }
+
+    // Shared processing logic
+    private ResponseEntity<String> processWebhook(String payload, String sigHeader, String secret) {
         Event event;
 
         try {
             // Verify webhook signature
-            event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+            event = Webhook.constructEvent(payload, sigHeader, secret);
         } catch (SignatureVerificationException e) {
             System.err.println("❌ Webhook signature verification failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid signature");
@@ -247,6 +265,12 @@ public class StripeController {
             case "setup_intent.succeeded":
                 handleSetupIntentSucceeded(event);
                 break;
+            case "payout.paid":
+                handlePayoutPaid(event);
+                break;
+            case "payout.failed":
+                handlePayoutFailed(event);
+                break;
             default:
                 System.out.println("ℹ️ Unhandled event type: " + event.getType());
         }
@@ -259,7 +283,7 @@ public class StripeController {
 
     private void handlePaymentIntentSucceeded(Event event) {
         try {
-            System.out.println("🔍 Processing payment_intent.succeeded...");
+            System.out.println("�� Processing payment_intent.succeeded...");
 
             // ✅ Get raw JSON safely
             String rawJson = event.getData().getObject().toJson();
@@ -349,5 +373,38 @@ public class StripeController {
 
     private void handlePaymentIntentFailed(Event event) {
         System.out.println("❌ Payment failed: " + event.getId());
+    }
+
+    private void handlePayoutPaid(Event event) {
+        try {
+            var deserializer = event.getDataObjectDeserializer();
+            if (deserializer.getObject().isEmpty()) return;
+            Payout payout = (Payout) deserializer.getObject().get();
+
+            System.out.println("�� Processing payout.paid...");
+            System.out.println("  Payout ID: " + payout.getId());
+            System.out.println("  Amount: $" + (payout.getAmount() / 100.0));
+            System.out.println("✅ Payout successfully delivered");
+
+        } catch (Exception e) {
+            System.err.println("❌ Error handling payout.paid: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void handlePayoutFailed(Event event) {
+        try {
+            var deserializer = event.getDataObjectDeserializer();
+            if (deserializer.getObject().isEmpty()) return;
+            Payout payout = (Payout) deserializer.getObject().get();
+
+            System.err.println("❌ Processing payout.failed...");
+            System.err.println("  Payout ID: " + payout.getId());
+            System.err.println("  Failure message: " + payout.getFailureMessage());
+
+        } catch (Exception e) {
+            System.err.println("❌ Error handling payout.failed: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
