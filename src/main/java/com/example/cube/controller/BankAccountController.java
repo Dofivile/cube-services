@@ -1,5 +1,6 @@
 package com.example.cube.controller;
 
+import com.example.cube.dto.response.BankAccountStatusResponse;
 import com.example.cube.security.AuthenticationService;
 import com.example.cube.service.BankAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,15 +72,12 @@ public class BankAccountController {
      * Check if user has a bank account linked
      */
     @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getBankAccountStatus(
+    public ResponseEntity<BankAccountStatusResponse> getBankAccountStatus(
             @RequestHeader("Authorization") String authHeader) {
 
         UUID userId = authenticationService.validateAndExtractUserId(authHeader);
-        boolean hasAccount = bankAccountService.userHasBankAccountLinked(userId);
+        BankAccountStatusResponse status = bankAccountService.getBankAccountStatus(userId);
 
-        return ResponseEntity.ok(Map.of(
-                "hasBankAccount", hasAccount,
-                "message", hasAccount ? "Bank account is linked" : "No bank account linked"
-        ));
+        return ResponseEntity.ok(status);
     }
 }

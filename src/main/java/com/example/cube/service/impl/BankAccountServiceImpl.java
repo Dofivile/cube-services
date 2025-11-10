@@ -1,6 +1,7 @@
 // BankAccountServiceImpl.java
 package com.example.cube.service.impl;
 
+import com.example.cube.dto.response.BankAccountStatusResponse;
 import com.example.cube.model.UserDetails;
 import com.example.cube.model.UserPaymentMethod;
 import com.example.cube.repository.UserDetailsRepository;
@@ -166,6 +167,44 @@ public class BankAccountServiceImpl implements BankAccountService {
         } catch (StripeException e) {
             throw new RuntimeException("Failed to retrieve payment method: " + e.getMessage());
         }
+    }
+
+    @Override
+    public BankAccountStatusResponse getBankAccountStatus(UUID userId) {
+        // Check if user has any verified bank account
+        Optional<UserPaymentMethod> defaultMethod =
+                userPaymentMethodRepository.findByUserIdAndIsDefaultTrue(userId);
+
+        if (defaultMethod.isPresent() && defaultMethod.get().getBankAccountVerified()) {
+            UserPaymentMethod method = defaultMethod.get();
+            return new BankAccountStatusResponse(
+                    true,
+                    method.getBankName(),
+                    method.getLast4(),
+                    method.getIsDefault(),
+                    method.getBankAccountVerified()
+            );
+        }
+
+        // If no default, check for any verified account
+        List<UserPaymentMethod> userMethods = userPaymentMethodRepository.findByUserId(userId);
+        Optional<UserPaymentMethod> anyVerified = userMethods.stream()
+                .filter(m -> m.getBankAccountVerified() != null && m.getBankAccountVerified())
+                .findFirst();
+
+        if (anyVerified.isPresent()) {
+            UserPaymentMethod method = anyVerified.get();
+            return new BankAccountStatusResponse(
+                    true,
+                    method.getBankName(),
+                    method.getLast4(),
+                    method.getIsDefault(),
+                    method.getBankAccountVerified()
+            );
+        }
+
+        // No bank account linked
+        return new BankAccountStatusResponse(false, null, null, null, null);
     }
 
     @Override
