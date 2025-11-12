@@ -184,7 +184,7 @@ public class CycleServiceImpl implements CycleService {
 
         // 9. Send notification emails to all members and admin
         try {
-            emailService.sendWinnerNotificationEmails(cube, winner, payoutAmount);
+            emailService.sendWinnerNotificationEmails(cube, winner, payoutAmount, currentCycle);
         } catch (Exception e) {
             // Log error but don't fail the transaction - winner is already recorded
             System.err.println("⚠️ Failed to send notification emails, but cycle processing completed: " + e.getMessage());

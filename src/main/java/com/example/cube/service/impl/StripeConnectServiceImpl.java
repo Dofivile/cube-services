@@ -136,8 +136,8 @@ public class StripeConnectServiceImpl implements StripeConnectService {
         try {
             AccountLinkCreateParams params = AccountLinkCreateParams.builder()
                     .setAccount(accountId)
-                    .setRefreshUrl(frontendUrl + "/onboarding/refresh")
-                    .setReturnUrl(frontendUrl + "/onboarding/complete")
+                    .setRefreshUrl("https://cube-service-prod-788967711773.us-central1.run.app/api/stripe/onboarding/refresh")
+                    .setReturnUrl("ttps://cube-service-prod-788967711773.us-central1.run.app/api/stripe/onboarding/complete")
                     .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
                     .setCollect(AccountLinkCreateParams.Collect.EVENTUALLY_DUE)
                     .build();

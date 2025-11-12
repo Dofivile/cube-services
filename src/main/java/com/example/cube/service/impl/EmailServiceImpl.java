@@ -76,7 +76,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendWinnerNotificationEmails(Cube cube, CubeMember winner, BigDecimal payoutAmount) {
+    public void sendWinnerNotificationEmails(Cube cube, CubeMember winner, BigDecimal payoutAmount, Integer cycleNumber) {
         try {
             // 1. Get all members with contact info in ONE query ✅
             List<MemberWithContact> members = cubeMemberRepository.findMembersWithContactInfo(cube.getCubeId());
@@ -87,11 +87,21 @@ public class EmailServiceImpl implements EmailService {
                     .findFirst()
                     .orElse(null);
 
-            String winnerName = winnerInfo != null ? winnerInfo.getFullName() : "Unknown";
             String winnerEmail = winnerInfo != null ? winnerInfo.getEmail() : null;
+            String fullName = winnerInfo != null ? winnerInfo.getFullName() : "";
+            
+            // Use name if available, otherwise use email, otherwise use User ID
+            String winnerName;
+            if (fullName != null && !fullName.trim().isEmpty()) {
+                winnerName = fullName;
+            } else if (winnerEmail != null && !winnerEmail.isEmpty()) {
+                winnerName = winnerEmail;
+            } else {
+                winnerName = "User " + winner.getUserId().toString().substring(0, 8);
+            }
 
-            String subject = "🎉 " + cube.getName() + " — Cycle " + cube.getCurrentCycle() + " Winner!";
-            String htmlBody = buildWinnerEmailHtml(cube, winnerName, payoutAmount);
+            String subject = "🎉 " + cube.getName() + " — Cycle " + cycleNumber + " Winner!";
+            String htmlBody = buildWinnerEmailHtml(cube, winnerName, payoutAmount, cycleNumber);
 
             // 3. Send emails to all members
             int emailsSent = 0;
@@ -114,7 +124,7 @@ public class EmailServiceImpl implements EmailService {
             }
 
             // 4. Send admin notification
-            sendAdminNotificationEmail(resendApiUrl, cube, winnerName, winnerEmail, payoutAmount);
+            sendAdminNotificationEmail(resendApiUrl, cube, winnerName, winnerEmail, payoutAmount, cycleNumber);
 
             System.out.println("✅ Winner emails sent for cube " + cube.getName() +
                     " (" + emailsSent + "/" + members.size() + " members notified)");
@@ -151,10 +161,10 @@ public class EmailServiceImpl implements EmailService {
     /**
      * Send admin notification for payout review
      */
-    private void sendAdminNotificationEmail(String apiUrl, Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount) {
+    private void sendAdminNotificationEmail(String apiUrl, Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount, Integer cycleNumber) {
         try {
-            String subject = "🔔 Cube Payout Review — " + cube.getName() + " (Cycle " + cube.getCurrentCycle() + ")";
-            String htmlBody = buildAdminEmailHtml(cube, winnerName, winnerEmail, payoutAmount);
+            String subject = "🔔 Cube Payout Review — " + cube.getName() + " (Cycle " + cycleNumber + ")";
+            String htmlBody = buildAdminEmailHtml(cube, winnerName, winnerEmail, payoutAmount, cycleNumber);
 
             sendEmail(apiUrl, adminEmail, subject, htmlBody);
             System.out.println("✅ Admin notification sent for cube " + cube.getName());
@@ -231,7 +241,7 @@ public class EmailServiceImpl implements EmailService {
     /**
      * Build HTML email template for winner notification (sent to all members)
      */
-    private String buildWinnerEmailHtml(Cube cube, String winnerName, BigDecimal payoutAmount) {
+    private String buildWinnerEmailHtml(Cube cube, String winnerName, BigDecimal payoutAmount, Integer cycleNumber) {
         return String.format("""
                 <!DOCTYPE html>
                 <html>
@@ -253,10 +263,12 @@ public class EmailServiceImpl implements EmailService {
                                         <td style="padding: 40px;">
                                             <h2 style="color: #1f2937; margin-top: 0;">%s</h2>
                                             
-                                            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
-                                                <p style="margin: 5px 0; font-size: 16px;"><strong>Winner:</strong> %s</p>
-                                                <p style="margin: 5px 0; font-size: 16px;"><strong>Payout Amount:</strong> <span style="color: #059669; font-size: 20px;">$%s</span></p>
-                                                <p style="margin: 5px 0; font-size: 16px;"><strong>Cycle:</strong> %d</p>
+                                            <div style="background: #f0fdf4; padding: 25px; border-radius: 12px; margin: 20px 0; border: 2px solid #059669; text-align: center;">
+                                                <p style="margin: 0 0 10px 0; font-size: 14px; color: #047857; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">🎊 This Cycle's Winner 🎊</p>
+                                                <p style="margin: 5px 0; font-size: 24px; font-weight: bold; color: #1f2937;">%s</p>
+                                                <p style="margin: 15px 0 5px 0; font-size: 16px; color: #6b7280;"><strong>Payout Amount:</strong></p>
+                                                <p style="margin: 0; color: #059669; font-size: 32px; font-weight: bold;">$%s</p>
+                                                <p style="margin: 15px 0 0 0; font-size: 14px; color: #6b7280;"><strong>Cycle:</strong> %d</p>
                                             </div>
                                             
                                             <p style="color: #4b5563; line-height: 1.6;">
@@ -281,14 +293,14 @@ public class EmailServiceImpl implements EmailService {
                 cube.getName(),
                 winnerName,
                 payoutAmount,
-                cube.getCurrentCycle()
+                cycleNumber
         );
     }
 
     /**
      * Build HTML email template for admin notification
      */
-    private String buildAdminEmailHtml(Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount) {
+    private String buildAdminEmailHtml(Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount, Integer cycleNumber) {
         return String.format("""
                 <!DOCTYPE html>
                 <html>
@@ -340,7 +352,7 @@ public class EmailServiceImpl implements EmailService {
                 winnerName,
                 winnerEmail != null ? winnerEmail : "N/A",
                 payoutAmount,
-                cube.getCurrentCycle(),
+                cycleNumber,
                 cube.getCubeId()
         );
     }

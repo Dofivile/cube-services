@@ -24,6 +24,7 @@ public interface EmailService {
      * @param cube The cube where winner was selected
      * @param winner The winning member
      * @param payoutAmount The payout amount for this cycle
+     * @param cycleNumber The cycle number for which the winner was selected
      */
-    void sendWinnerNotificationEmails(Cube cube, CubeMember winner, BigDecimal payoutAmount);
+    void sendWinnerNotificationEmails(Cube cube, CubeMember winner, BigDecimal payoutAmount, Integer cycleNumber);
 }

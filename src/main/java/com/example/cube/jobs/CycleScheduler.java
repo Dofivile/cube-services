@@ -35,7 +35,7 @@ public class CycleScheduler {
      * Runs every 3 mins to check for cubes ready to process
      * For testing with 1-minute cycles, 30 seconds gives quick response
      */
-    @Scheduled(fixedRate = 180000)  // every 3 mins
+    @Scheduled(fixedRate = 30000)  // every 3 mins
     public void processReadyCubes() {
         logger.info("Scheduler: Checking for cubes ready to process...");
 
