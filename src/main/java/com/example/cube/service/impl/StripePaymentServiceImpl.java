@@ -41,9 +41,6 @@ public class StripePaymentServiceImpl implements StripePaymentService {
     @Autowired
     private PaymentTransactionRepository paymentTransactionRepository;
 
-    @Autowired
-    private UserPaymentMethodRepository userPaymentMethodRepository;
-
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeApiKey;
@@ -53,95 +50,69 @@ public class StripePaymentServiceImpl implements StripePaymentService {
     @Transactional
     public PaymentIntentResponse createPaymentIntent(UUID userId, UUID cubeId, UUID memberId, Integer cycleNumber) {
 
+        // Validate cube exists
         Cube cube = cubeRepository.findById(cubeId)
                 .orElseThrow(() -> new RuntimeException("Cube not found"));
+
+        // Validate member exists
         CubeMember member = cubeMemberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
 
-        if (!member.getCubeId().equals(cubeId)) throw new RuntimeException("Member does not belong to this cube");
-        if (!member.getUserId().equals(userId)) throw new RuntimeException("User ID does not match member");
-        if (!cycleNumber.equals(cube.getCurrentCycle()))
+        // Validate member belongs to cube and matches user
+        if (!member.getCubeId().equals(cubeId)) {
+            throw new RuntimeException("Member does not belong to this cube");
+        }
+        if (!member.getUserId().equals(userId)) {
+            throw new RuntimeException("User ID does not match member");
+        }
+        if (!cycleNumber.equals(cube.getCurrentCycle())) {
             throw new RuntimeException("Invalid cycle number. Current cycle is: " + cube.getCurrentCycle());
+        }
 
+        // Check if payment already made for this cycle
         boolean alreadyPaid = paymentTransactionRepository
                 .existsByCubeIdAndMemberIdAndCycleNumberAndTypeIdAndStatusId(
                         cubeId, memberId, cycleNumber, 1, 2);
 
-        if (alreadyPaid) throw new RuntimeException("Payment already recorded for this cycle");
+        if (alreadyPaid) {
+            throw new RuntimeException("Payment already recorded for this cycle");
+        }
 
+        // Get or create Stripe customer
         String customerId = getOrCreateCustomer(userId);
 
-        // ✅ NEW: Get the saved payment method from user_payment_methods table
-        UserPaymentMethod defaultPaymentMethod = userPaymentMethodRepository
-                .findByUserIdAndIsDefaultTrue(userId)
-                .orElseThrow(() -> new RuntimeException("No payment method linked. Please link a bank account first."));
-
-        String paymentMethodId = defaultPaymentMethod.getStripePaymentMethodId();
-
+        // Calculate amount in cents
         BigDecimal amountInDollars = cube.getAmountPerCycle();
         long amountInCents = amountInDollars.multiply(new BigDecimal("100")).longValue();
 
         try {
+            // Build metadata for tracking
             Map<String, String> metadata = new HashMap<>();
             metadata.put("user_id", userId.toString());
             metadata.put("cube_id", cubeId.toString());
             metadata.put("member_id", memberId.toString());
             metadata.put("cycle_number", cycleNumber.toString());
+            metadata.put("payment_type", "card");
 
-    // ✅ Build payment intent params with mandate
-    PaymentIntentCreateParams.Builder paramsBuilder = PaymentIntentCreateParams.builder()
+            // Create PaymentIntent for card payments with automatic payment methods
+            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(amountInCents)
                     .setCurrency("usd")
                     .setCustomer(customerId)
-            .setPaymentMethod(paymentMethodId)
-            .addPaymentMethodType("us_bank_account")
-            .setConfirm(true)
-            .setPaymentMethodOptions(
-                            PaymentIntentCreateParams.PaymentMethodOptions.builder()
-                                    .setUsBankAccount(
-                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount.builder()
-                                                    .setFinancialConnections(
-                                                            PaymentIntentCreateParams.PaymentMethodOptions.UsBankAccount
-                                                                    .FinancialConnections.builder()
-                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
-                                                                            .UsBankAccount.FinancialConnections.Permission.PAYMENT_METHOD)
-                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
-                                                                            .UsBankAccount.FinancialConnections.Permission.BALANCES)
-                                                                    .addPermission(PaymentIntentCreateParams.PaymentMethodOptions
-                                                                            .UsBankAccount.FinancialConnections.Permission.OWNERSHIP)
-                                                                    .build()
-                                                    )
-                                                    .setVerificationMethod(PaymentIntentCreateParams.PaymentMethodOptions
-                                                            .UsBankAccount.VerificationMethod.INSTANT)
-                                                    .build()
-                                    )
-                                    .build()
-                    )
-                    .setMandateData(
-                            PaymentIntentCreateParams.MandateData.builder()
-                                    .setCustomerAcceptance(
-                                            PaymentIntentCreateParams.MandateData.CustomerAcceptance.builder()
-                                                    .setType(PaymentIntentCreateParams.MandateData.CustomerAcceptance.Type.ONLINE)
-                                                    .setOnline(
-                                                            PaymentIntentCreateParams.MandateData.CustomerAcceptance.Online.builder()
-                                                                    .setIpAddress("0.0.0.0")  // TODO: Capture actual user IP
-                                                                    .setUserAgent("CubeApp/1.0")  // TODO: Capture actual user agent
-                                                                    .build()
-                                                    )
-                                                    .build()
-                                    )
+                    .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                    .setEnabled(true)
                                     .build()
                     )
                     .putAllMetadata(metadata)
-            .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber);
+                    .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
+                    .build();
 
-
-    PaymentIntentCreateParams params = paramsBuilder.build();
             PaymentIntent paymentIntent = PaymentIntent.create(params);
 
-    System.out.println("✅ PaymentIntent created: " + paymentIntent.getId());
-    System.out.println("   Status: " + paymentIntent.getStatus());
-    System.out.println("   Mandate: " + defaultPaymentMethod.getMandateId());
+            System.out.println("✅ Card PaymentIntent created: " + paymentIntent.getId());
+            System.out.println("   Status: " + paymentIntent.getStatus());
+            System.out.println("   Amount: $" + (amountInCents / 100.0));
 
             return new PaymentIntentResponse(
                     paymentIntent.getClientSecret(),
@@ -150,7 +121,8 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             );
 
         } catch (StripeException e) {
-            throw new RuntimeException("Failed to create payment intent: " + e.getMessage());
+            System.err.println("❌ Failed to create card payment intent: " + e.getMessage());
+            throw new RuntimeException("Failed to create card payment intent: " + e.getMessage());
         }
     }
 
@@ -163,7 +135,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
 
             // Check if transaction already recorded
             if (paymentTransactionRepository.existsByStripePaymentIntentId(paymentIntentId)) {
-                System.out.println("⚠️ Payment already processed: " + paymentIntentId);
+                System.out.println("⚠️ Card payment already processed: " + paymentIntentId);
                 return;
             }
 
@@ -220,14 +192,14 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                 System.out.println("✅ Member " + memberId + " marked as PAID for cycle " + cycleNumber);
             }
 
-            System.out.println("✅ Payment recorded: " + paymentIntentId +
+            System.out.println("✅ Card payment recorded: " + paymentIntentId +
                     " | Cube: " + cube.getName() +
                     " | Amount: $" + transaction.getAmount() +
                     " | Cycle: " + cycleNumber);
 
         } catch (Exception e) {
-            System.err.println("❌ Error processing payment: " + e.getMessage());
-            throw new RuntimeException("Failed to process payment: " + e.getMessage());
+            System.err.println("❌ Error processing card payment: " + e.getMessage());
+            throw new RuntimeException("Failed to process card payment: " + e.getMessage());
         }
     }
 

@@ -4,7 +4,6 @@ import com.example.cube.dto.request.CreatePaymentIntentRequest;
 import com.example.cube.dto.response.PaymentIntentResponse;
 import com.example.cube.repository.UserDetailsRepository;
 import com.example.cube.security.AuthenticationService;
-import com.example.cube.service.BankAccountService;
 import com.example.cube.service.PayoutService;
 import com.example.cube.service.StripeConnectService;
 import com.example.cube.service.StripePaymentService;
@@ -42,7 +41,6 @@ public class StripeController {
     private final PayoutService payoutService;
     private final AuthenticationService authenticationService;
     private final UserDetailsRepository userDetailsRepository;
-    private final BankAccountService bankAccountService;
 
     @Value("${stripe.api.key}")
     private String stripeApiKey;
@@ -53,14 +51,12 @@ public class StripeController {
             StripeConnectService stripeConnectService,
             PayoutService payoutService,
             AuthenticationService authenticationService,
-            UserDetailsRepository userDetailsRepository,
-            BankAccountService bankAccountService) {
+            UserDetailsRepository userDetailsRepository) {
         this.stripePaymentService = stripePaymentService;
         this.stripeConnectService = stripeConnectService;
         this.payoutService = payoutService;
         this.authenticationService = authenticationService;
         this.userDetailsRepository = userDetailsRepository;
-        this.bankAccountService = bankAccountService;
     }
 
     // ==================== PAYMENT OPERATIONS ====================
@@ -262,9 +258,6 @@ public class StripeController {
             case "account.updated":
                 handleAccountUpdated(event);
                 break;
-            case "setup_intent.succeeded":
-                handleSetupIntentSucceeded(event);
-                break;
             case "payout.paid":
                 handlePayoutPaid(event);
                 break;
@@ -312,8 +305,6 @@ public class StripeController {
     }
 
 
-
-
     private void handlePaymentIntentProcessing(Event event) {
         try {
             var deserializer = event.getDataObjectDeserializer();
@@ -323,31 +314,10 @@ public class StripeController {
             System.out.println("🔍 Processing payment_intent.processing...");
             System.out.println("  Payment Intent ID: " + paymentIntent.getId());
             System.out.println("  Amount: $" + (paymentIntent.getAmount() / 100.0));
-            System.out.println("  ⏳ ACH payment processing - will settle in 1-2 business days");
+            System.out.println("  ⏳ Card payment processing...");
 
         } catch (Exception e) {
             System.err.println("❌ Error handling payment_intent.processing: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    private void handleSetupIntentSucceeded(Event event) {
-        try {
-            var deserializer = event.getDataObjectDeserializer();
-            if (deserializer.getObject().isEmpty()) return;
-            SetupIntent setupIntent = (SetupIntent) deserializer.getObject().get();
-
-            System.out.println("🔍 Processing setup_intent.succeeded...");
-            String paymentMethodId = setupIntent.getPaymentMethod();
-            String userId = setupIntent.getMetadata().get("user_id");
-
-            if (userId != null && paymentMethodId != null) {
-                bankAccountService.saveBankAccountDetails(UUID.fromString(userId), paymentMethodId);
-                System.out.println("✅ Bank account linked via webhook");
-            }
-
-        } catch (Exception e) {
-            System.err.println("❌ Error handling setup_intent.succeeded: " + e.getMessage());
             e.printStackTrace();
         }
     }
