@@ -40,4 +40,10 @@ public interface PaymentTransactionRepository extends JpaRepository<Transaction,
     );
 
     boolean existsByStripePaymentIntentId(String stripePaymentIntentId);
+
+    /**
+     * Get all transactions for a user, ordered by most recent first
+     * Used for transaction history page
+     */
+    List<Transaction> findByUserIdOrderByCreatedAtDesc(UUID userId);
 }
