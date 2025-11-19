@@ -24,6 +24,7 @@ public class GetCubeResponse {
     private String goalTypeName;
     private String invitationCode;
     private BigDecimal totalToBeCollected;
+    private BigDecimal totalAmountCollected;
 
     public GetCubeResponse() {}
 
@@ -169,5 +170,13 @@ public class GetCubeResponse {
 
     public void setTotalToBeCollected(BigDecimal totalToBeCollected) {
         this.totalToBeCollected = totalToBeCollected;
+    }
+
+    public BigDecimal getTotalAmountCollected() {
+        return totalAmountCollected;
+    }
+
+    public void setTotalAmountCollected(BigDecimal totalAmountCollected) {
+        this.totalAmountCollected = totalAmountCollected;
     }
 }
