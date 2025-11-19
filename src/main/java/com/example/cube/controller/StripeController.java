@@ -87,10 +87,6 @@ public class StripeController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Create a Customer Session for iOS Payment Sheet to display saved cards
-     * This allows the payment sheet to fetch and show previously saved payment methods
-     */
     @PostMapping("/payments/create-customer-session")
     public ResponseEntity<Map<String, String>> createCustomerSession(
             @RequestHeader("Authorization") String authHeader) {
@@ -102,39 +98,23 @@ public class StripeController {
 
         String customerId = user.getStripeCustomerId();
         if (customerId == null) {
-            throw new RuntimeException("No Stripe customer found. Please make a payment first.");
+            throw new RuntimeException("No Stripe customer found");
         }
 
         try {
             Stripe.apiKey = stripeApiKey;
 
-            CustomerSessionCreateParams params = CustomerSessionCreateParams.builder()
-                    .setCustomer(customerId)
-                    .setComponents(
-                            CustomerSessionCreateParams.Components.builder()
-                                    .setPaymentElement(
-                                            CustomerSessionCreateParams.Components.PaymentElement.builder()
-                                                    .setEnabled(true)
-                                                    .setFeatures(
-                                                            CustomerSessionCreateParams.Components.PaymentElement.Features.builder()
-                                                                    .setPaymentMethodSave(
-                                                                            CustomerSessionCreateParams.Components.PaymentElement.Features.PaymentMethodSave.ENABLED
-                                                                    )
-                                                                    .setPaymentMethodRemove(
-                                                                            CustomerSessionCreateParams.Components.PaymentElement.Features.PaymentMethodRemove.ENABLED
-                                                                    )
-                                                                    .build()
-                                                    )
-                                                    .build()
-                                    )
-                                    .build()
-                    )
-                    .build();
+            // Use raw Map approach for older SDK
+            Map<String, Object> params = new HashMap<>();
+            params.put("customer", customerId);
+
+            Map<String, Object> components = new HashMap<>();
+            Map<String, Object> paymentElement = new HashMap<>();
+            paymentElement.put("enabled", true);
+            components.put("payment_element", paymentElement);
+            params.put("components", components);
 
             CustomerSession session = CustomerSession.create(params);
-
-            System.out.println("✅ Customer Session created for user: " + userId);
-            System.out.println("   Customer ID: " + customerId);
 
             return ResponseEntity.ok(Map.of(
                     "customerSessionClientSecret", session.getClientSecret(),
@@ -142,7 +122,6 @@ public class StripeController {
             ));
 
         } catch (StripeException e) {
-            System.err.println("❌ Failed to create customer session: " + e.getMessage());
             throw new RuntimeException("Failed to create customer session: " + e.getMessage());
         }
     }
