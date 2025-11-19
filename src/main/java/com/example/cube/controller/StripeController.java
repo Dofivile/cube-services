@@ -13,6 +13,7 @@ import com.stripe.model.Event;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.*;
+import com.stripe.param.CustomerSessionCreateParams;
 import com.stripe.Stripe;
 import com.stripe.net.Webhook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,6 +85,66 @@ public class StripeController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Create a Customer Session for iOS Payment Sheet to display saved cards
+     * This allows the payment sheet to fetch and show previously saved payment methods
+     */
+    @PostMapping("/payments/create-customer-session")
+    public ResponseEntity<Map<String, String>> createCustomerSession(
+            @RequestHeader("Authorization") String authHeader) {
+
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+
+        var user = userDetailsRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String customerId = user.getStripeCustomerId();
+        if (customerId == null) {
+            throw new RuntimeException("No Stripe customer found. Please make a payment first.");
+        }
+
+        try {
+            Stripe.apiKey = stripeApiKey;
+
+            CustomerSessionCreateParams params = CustomerSessionCreateParams.builder()
+                    .setCustomer(customerId)
+                    .setComponents(
+                            CustomerSessionCreateParams.Components.builder()
+                                    .setPaymentElement(
+                                            CustomerSessionCreateParams.Components.PaymentElement.builder()
+                                                    .setEnabled(true)
+                                                    .setFeatures(
+                                                            CustomerSessionCreateParams.Components.PaymentElement.Features.builder()
+                                                                    .setPaymentMethodSave(
+                                                                            CustomerSessionCreateParams.Components.PaymentElement.Features.PaymentMethodSave.ENABLED
+                                                                    )
+                                                                    .setPaymentMethodRemove(
+                                                                            CustomerSessionCreateParams.Components.PaymentElement.Features.PaymentMethodRemove.ENABLED
+                                                                    )
+                                                                    .build()
+                                                    )
+                                                    .build()
+                                    )
+                                    .build()
+                    )
+                    .build();
+
+            CustomerSession session = CustomerSession.create(params);
+
+            System.out.println("✅ Customer Session created for user: " + userId);
+            System.out.println("   Customer ID: " + customerId);
+
+            return ResponseEntity.ok(Map.of(
+                    "customerSessionClientSecret", session.getClientSecret(),
+                    "customerId", customerId
+            ));
+
+        } catch (StripeException e) {
+            System.err.println("❌ Failed to create customer session: " + e.getMessage());
+            throw new RuntimeException("Failed to create customer session: " + e.getMessage());
+        }
     }
 
     // ==================== PLATFORM BALANCE (ADMIN/OPS) ====================
