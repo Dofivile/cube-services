@@ -111,7 +111,7 @@ public class StripeController {
             Map<String, Object> components = new HashMap<>();
             Map<String, Object> paymentElement = new HashMap<>();
             paymentElement.put("enabled", true);
-            components.put("payment_element", paymentElement);
+            components.put("mobile_payment_element", paymentElement);
             params.put("components", components);
 
             CustomerSession session = CustomerSession.create(params);
