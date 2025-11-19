@@ -2,8 +2,6 @@ package com.example.cube.dto.request.auth;
 
 import jakarta.validation.constraints.NotBlank;
 
-import java.time.LocalDate;
-
 public class SignUpAuthRequest {
     @NotBlank
     private String email;
@@ -11,7 +9,6 @@ public class SignUpAuthRequest {
     @NotBlank private String firstName;
     @NotBlank private String lastName;
     @NotBlank private String phoneNumber;
-    private LocalDate dateOfBirth;
 
     public String getEmail() {
         return email;
@@ -32,10 +29,6 @@ public class SignUpAuthRequest {
         this.phoneNumber = phoneNumber;
     }
 
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
-
     public String getPassword() {
         return password;
     }
@@ -45,9 +38,5 @@ public class SignUpAuthRequest {
 
     public String getPhoneNumber() {
         return phoneNumber;
-    }
-
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
     }
 }

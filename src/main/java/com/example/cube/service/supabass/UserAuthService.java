@@ -165,7 +165,6 @@ public class UserAuthService {
             UserDetails user = new UserDetails();
             user.setUser_id(UUID.fromString(userId));
             user.setPhonenumber(req.getPhoneNumber());
-            user.setDateofbirth(req.getDateOfBirth());
             user.setFirstName(req.getFirstName());
             user.setLastName(req.getLastName());
             userDetailsRepo.save(user);

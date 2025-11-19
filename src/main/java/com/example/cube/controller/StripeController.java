@@ -73,7 +73,7 @@ public class StripeController {
         var user = userDetailsRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         boolean payoutsEnabled = user.getStripePayoutsEnabled() != null && user.getStripePayoutsEnabled();
-        if (user.getStripeAccountId() == null || !payoutsEnabled) {
+        if (user.getStripeAccountId() == null) {
             throw new RuntimeException("Complete Stripe onboarding before making a payment");
         }
 
