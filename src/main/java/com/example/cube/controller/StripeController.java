@@ -104,14 +104,23 @@ public class StripeController {
         try {
             Stripe.apiKey = stripeApiKey;
 
-            // Use raw Map approach for older SDK
+            // Create customer session with features enabled
             Map<String, Object> params = new HashMap<>();
             params.put("customer", customerId);
 
+            // Configure mobile payment element with all features
             Map<String, Object> components = new HashMap<>();
-            Map<String, Object> paymentElement = new HashMap<>();
-            paymentElement.put("enabled", true);
-            components.put("mobile_payment_element", paymentElement);
+            Map<String, Object> mobilePaymentElement = new HashMap<>();
+            mobilePaymentElement.put("enabled", true);
+            
+            // Enable features to save, display, and remove payment methods
+            Map<String, Object> features = new HashMap<>();
+            features.put("payment_method_save", "enabled");
+            features.put("payment_method_redisplay", "enabled");
+            features.put("payment_method_remove", "enabled");
+            mobilePaymentElement.put("features", features);
+            
+            components.put("mobile_payment_element", mobilePaymentElement);
             params.put("components", components);
 
             CustomerSession session = CustomerSession.create(params);
@@ -288,6 +297,10 @@ public class StripeController {
         switch (event.getType()) {
             case "payment_intent.succeeded":
                 handlePaymentIntentSucceeded(event);
+                break;
+            case "charge.succeeded":
+                // Already handled by payment_intent.succeeded
+                System.out.println("✅ Charge succeeded (already processed via payment_intent)");
                 break;
             case "payment_intent.processing":
                 handlePaymentIntentProcessing(event);
