@@ -11,8 +11,6 @@ import com.example.cube.repository.GoalTypeRepository;
 import com.example.cube.model.GoalType;
 import com.example.cube.service.CubeService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +47,6 @@ public class CubeServiceImpl implements CubeService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "userCubes", key = "#userId")
     public Cube createCubeFromDTO(CreateCubeRequest createCubeRequest, UUID userId) {  // Add userId parameter
 
         Cube cube;
@@ -134,14 +131,12 @@ public class CubeServiceImpl implements CubeService {
     }
 
     @Override
-    @Cacheable(value = "userCubes", key = "#userId")
     public List<UUID> getUserCubeIds(UUID userId) {
         List<CubeMember> membershipList = cubeMemberRepository.findByUserId(userId);
         return membershipList.stream().map(CubeMember::getCubeId).collect(Collectors.toList());
     }
 
     @Override
-    @Cacheable(value = "cubeDetails", key = "#cubeId")
     public Cube getCubeById(UUID cubeId) {
         return cubeRepository.findById(cubeId).orElseThrow(() -> new RuntimeException("Cube not found with ID: " + cubeId));
     }

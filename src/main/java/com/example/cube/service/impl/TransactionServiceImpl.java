@@ -7,7 +7,6 @@ import com.example.cube.model.Transaction;
 import com.example.cube.repository.PaymentTransactionRepository;
 import com.example.cube.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,7 +24,6 @@ public class TransactionServiceImpl implements TransactionService {
     private TransactionMapper transactionMapper;
 
     @Override
-    @Cacheable(value = "transactions", key = "#userId")
     public TransactionHistoryResponse getUserTransactionHistory(UUID userId) {
 
         // Get all transactions for this user (ordered by most recent)
