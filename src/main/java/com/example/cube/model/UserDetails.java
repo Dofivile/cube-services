@@ -1,8 +1,6 @@
 package com.example.cube.model;
 
 import jakarta.persistence.*;
-
-import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -12,9 +10,6 @@ public class UserDetails {
     @Id
     @Column(name = "user_id", columnDefinition = "uuid")
     private UUID user_id;
-
-    @Column(name = "phonenumber")
-    private String phonenumber;
 
     @Column(name = "first_name")
     private String firstName;
@@ -62,16 +57,8 @@ public class UserDetails {
         this.user_id = user_id;
     }
 
-    public void setPhonenumber(String phonenumber) {
-        this.phonenumber = phonenumber;
-    }
-
     public UUID getUser_id() {
         return user_id;
-    }
-
-    public String getPhonenumber() {
-        return phonenumber;
     }
 
     public String getFirstName() {

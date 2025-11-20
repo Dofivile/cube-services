@@ -2,6 +2,7 @@ package com.example.cube.security;
 
 import com.example.cube.exception.UnauthorizedException;
 import com.example.cube.repository.UserDetailsRepository;
+import com.example.cube.service.UserDetailsSyncService;
 import com.example.cube.service.supabass.TokenValidator;
 import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +14,16 @@ import java.util.UUID;
 public class AuthenticationService {
 
     private final TokenValidator tokenValidator;
-    private final UserDetailsRepository userRepository;  // Add this
+    private final UserDetailsRepository userRepository;
+    private final UserDetailsSyncService userDetailsSyncService;
 
     @Autowired
-    public AuthenticationService(TokenValidator tokenValidator, UserDetailsRepository userRepository) {
+    public AuthenticationService(TokenValidator tokenValidator,
+                                 UserDetailsRepository userRepository,
+                                 UserDetailsSyncService userDetailsSyncService) {
         this.tokenValidator = tokenValidator;
         this.userRepository = userRepository;
+        this.userDetailsSyncService = userDetailsSyncService;
     }
 
     public UUID validateAndExtractUserId(String authHeader) {
@@ -34,6 +39,9 @@ public class AuthenticationService {
         }
 
         UUID userId = extractUserIdFromToken(token);
+
+        // Ensure we have a local user_details record (handles Google/Apple sign-ins).
+        userDetailsSyncService.ensureUserDetails(userId);
 
         // Verify user actually exists in db
         if (!userRepository.existsById(userId)) {
