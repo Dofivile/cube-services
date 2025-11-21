@@ -104,7 +104,6 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                                     .setEnabled(true)
                                     .build()
                     )
-                    .setSetupFutureUsage(PaymentIntentCreateParams.SetupFutureUsage.OFF_SESSION)
                     .putAllMetadata(metadata)
                     .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
                     .build();
