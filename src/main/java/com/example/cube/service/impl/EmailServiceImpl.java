@@ -184,74 +184,74 @@ public class EmailServiceImpl implements EmailService {
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="color-scheme" content="light only"/>
+  <meta name="supported-color-schemes" content="light"/>
 </head>
-<body style="margin:0;padding:0;background:white;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial;">
-  <table width="100%%" cellpadding="0" cellspacing="0" style="padding:32px;background:white;">
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="padding:32px;background:#ffffff;">
     <tr><td align="center">
 
-      <table width="560" cellpadding="0" cellspacing="0" style="
+      <table width="560" cellpadding="0" cellspacing="0" border="0" role="presentation" style="
+        max-width:560px;
         border-radius:24px;
-        border:1px solid rgba(0,0,0,0.08);
-        background:linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(255,255,255,1) 25%%, rgba(255,255,255,1) 100%%);
-        box-shadow:0 1px 2px rgba(0,0,0,0.03);
+        border:1px solid #e5e5e5;
+        background:#ffffff;
+        box-shadow:0 1px 3px rgba(0,0,0,0.1);
         overflow:hidden;
       ">
 
-        <tr><td align="center" style="padding:36px 0 8px;">
-          <div style="
-            width:100px;height:100px;
-            background:radial-gradient(circle at 30%% 30%%, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
-            border-radius:50%%;
-            display:flex;align-items:center;justify-content:center;
-          ">
-            <img src="https://cubemoney.io/logo-black.png" width="64" height="64" style="display:block;">
-          </div>
+        <tr><td align="center" style="padding:40px 32px 24px;background:#f9f9f9;">
+          <img src="https://cubemoney.io/logo-black.png" width="64" height="64" alt="Cube" style="display:block;margin:0 auto;">
         </td></tr>
 
-        <tr><td align="center" style="padding:8px 32px 6px;">
-          <div style="font-size:26px;font-weight:500;font-family:'Playfair Display','Times New Roman',serif;color:black;">
-            You've been invited to join <span style="opacity:0.9;">%s</span>
-          </div>
+        <tr><td align="center" style="padding:24px 32px 16px;background:#ffffff;">
+          <h1 style="font-size:24px;font-weight:600;font-family:'Playfair Display','Georgia',serif;color:#000000;margin:0;line-height:1.3;">
+            You've been invited to join<br/>%s
+          </h1>
         </td></tr>
 
-        <tr><td><div style="height:1px;background:rgba(0,0,0,0.06);margin:24px 32px 12px;"></div></td></tr>
+        <tr><td style="padding:0 32px;background:#ffffff;">
+          <div style="height:1px;background:#e5e5e5;margin:16px 0;"></div>
+        </td></tr>
 
-        <tr><td style="padding:0 32px 24px;">
-          <p style="margin:0;font-size:15px;line-height:1.5;color:rgba(0,0,0,0.75);text-align:center;">
+        <tr><td style="padding:16px 32px 24px;background:#ffffff;">
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#333333;text-align:center;">
             Cube gives your group access to capital faster than traditional saving — structured, predictable, and designed for growth.
           </p>
         </td></tr>
 
-        <tr><td align="center" style="padding:8px 32px 0;">
-          <div style="
-            display:inline-block;
-            padding:18px 32px;
-            border-radius:16px;
-            background:rgba(0,0,0,0.015);
-            border:1px solid rgba(0,0,0,0.06);
+        <tr><td align="center" style="padding:8px 32px 24px;background:#ffffff;">
+          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="
+            margin:0 auto;
+            padding:20px 32px;
+            border-radius:12px;
+            background:#f5f5f5;
+            border:2px dashed #666666;
           ">
-            <div style="font-size:11px;color:rgba(0,0,0,0.4);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;">
-              Invitation Code
-            </div>
-            <div style="font-size:26px;font-weight:600;letter-spacing:3px;font-family:'SFMono-Regular','Courier New',monospace;color:black;">
-              %s
-            </div>
-          </div>
+            <tr><td align="center">
+              <p style="font-size:11px;color:#666666;letter-spacing:1px;margin:0 0 8px 0;text-transform:uppercase;font-weight:600;">
+                Invitation Code
+              </p>
+              <p style="font-size:28px;font-weight:700;letter-spacing:4px;font-family:'Courier New',Courier,monospace;color:#000000;margin:0;">
+                %s
+              </p>
+            </td></tr>
+          </table>
         </td></tr>
 
-        <tr><td style="padding:24px 32px 32px;">
-          <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:black;">How to join:</p>
-          <ol style="margin:0;padding-left:18px;font-size:14px;color:rgba(0,0,0,0.75);line-height:1.6;">
-            <li>Download Cube from the <strong>App Store</strong> or visit <strong>cubemoney.io</strong></li>
-            <li>Sign in or create an account</li>
-            <li>Enter the code above</li>
+        <tr><td style="padding:0 32px 32px;background:#ffffff;">
+          <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#000000;">How to join:</p>
+          <ol style="margin:0;padding-left:20px;font-size:14px;color:#333333;line-height:1.8;">
+            <li style="margin-bottom:8px;">Download Cube from the <strong>App Store</strong> or visit <strong>cubemoney.io</strong></li>
+            <li style="margin-bottom:8px;">Sign in or create an account</li>
+            <li style="margin-bottom:8px;">Enter the code above</li>
             <li>Secure your spot & begin your cycle</li>
           </ol>
         </td></tr>
 
-        <tr><td style="padding:12px 0 24px;">
-          <div style="height:1px;background:#f0f0f0;margin:0 32px 16px;"></div>
-          <p style="margin:0;text-align:center;font-size:11px;color:#999;">
+        <tr><td style="padding:16px 32px 32px;background:#ffffff;">
+          <div style="height:1px;background:#e5e5e5;margin:0 0 16px 0;"></div>
+          <p style="margin:0;text-align:center;font-size:12px;color:#666666;">
             Valid for <strong>48 hours</strong> · Do not forward
           </p>
         </td></tr>
