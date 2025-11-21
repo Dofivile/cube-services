@@ -89,7 +89,7 @@ public class EmailServiceImpl implements EmailService {
 
             String winnerEmail = winnerInfo != null ? winnerInfo.getEmail() : null;
             String fullName = winnerInfo != null ? winnerInfo.getFullName() : "";
-            
+
             // Use name if available, otherwise use email, otherwise use User ID
             String winnerName;
             if (fullName != null && !fullName.trim().isEmpty()) {
@@ -175,67 +175,93 @@ public class EmailServiceImpl implements EmailService {
     }
 
     /**
-     * Build HTML email template for invitation with invitation code
+     * Build HTML email template for invitation with new modern design
      */
     private String buildInvitationEmailHtml(String invitationCode, String cubeName) {
         return String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            </head>
-            <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-                <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
-                    <tr>
-                        <td align="center">
-                            <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; padding: 40px;">
-                                <tr>
-                                    <td>
-                                        <h1 style="color: #333; margin: 0 0 20px 0;">You've been invited!</h1>
-                                        <p style="color: #666; font-size: 16px; line-height: 1.5; margin: 0 0 20px 0;">
-                                            You've been invited to join <strong>%s</strong>.
-                                        </p>
-                                        <p style="color: #666; font-size: 16px; line-height: 1.5; margin: 0 0 10px 0;">
-                                            Use this invitation code to join:
-                                        </p>
-                                        <table width="100%%" cellpadding="0" cellspacing="0">
-                                            <tr>
-                                                <td align="center" style="padding: 20px 0;">
-                                                    <div style="display: inline-block; background-color: #f3f4f6; border: 2px dashed #4CAF50; 
-                                                               padding: 20px 40px; border-radius: 8px;">
-                                                        <p style="margin: 0; color: #666; font-size: 12px; text-transform: uppercase; 
-                                                                  letter-spacing: 1px; margin-bottom: 5px;">Invitation Code</p>
-                                                        <p style="margin: 0; color: #1f2937; font-size: 32px; font-weight: bold; 
-                                                                  letter-spacing: 4px; font-family: 'Courier New', monospace;">
-                                                            %s
-                                                        </p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                        <p style="color: #666; font-size: 16px; line-height: 1.5; margin: 20px 0 0 0;">
-                                            <strong>How to join:</strong>
-                                        </p>
-                                        <ol style="color: #666; font-size: 14px; line-height: 1.8; margin: 10px 0 20px 20px;">
-                                            <li>Download the Cube app or visit cubemoney.io</li>
-                                            <li>Sign up or sign in to your account</li>
-                                            <li>Enter the invitation code above</li>
-                                            <li>Start saving together!</li>
-                                        </ol>
-                                        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-                                        <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                                            This invitation will expire in 48 hours.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </body>
-            </html>
-            """, cubeName, invitationCode);
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body style="margin:0;padding:0;background:white;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial;">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="padding:32px;background:white;">
+    <tr><td align="center">
+
+      <table width="560" cellpadding="0" cellspacing="0" style="
+        border-radius:24px;
+        border:1px solid rgba(0,0,0,0.08);
+        background:linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(255,255,255,1) 25%%, rgba(255,255,255,1) 100%%);
+        box-shadow:0 1px 2px rgba(0,0,0,0.03);
+        overflow:hidden;
+      ">
+
+        <tr><td align="center" style="padding:36px 0 8px;">
+          <div style="
+            width:100px;height:100px;
+            background:radial-gradient(circle at 30%% 30%%, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
+            border-radius:50%%;
+            display:flex;align-items:center;justify-content:center;
+          ">
+            <img src="https://cubemoney.io/logo-black.png" width="64" height="64" style="display:block;">
+          </div>
+        </td></tr>
+
+        <tr><td align="center" style="padding:8px 32px 6px;">
+          <div style="font-size:26px;font-weight:500;font-family:'Playfair Display','Times New Roman',serif;color:black;">
+            You've been invited to join <span style="opacity:0.9;">%s</span>
+          </div>
+        </td></tr>
+
+        <tr><td><div style="height:1px;background:rgba(0,0,0,0.06);margin:24px 32px 12px;"></div></td></tr>
+
+        <tr><td style="padding:0 32px 24px;">
+          <p style="margin:0;font-size:15px;line-height:1.5;color:rgba(0,0,0,0.75);text-align:center;">
+            Cube gives your group access to capital faster than traditional saving — structured, predictable, and designed for growth.
+          </p>
+        </td></tr>
+
+        <tr><td align="center" style="padding:8px 32px 0;">
+          <div style="
+            display:inline-block;
+            padding:18px 32px;
+            border-radius:16px;
+            background:rgba(0,0,0,0.015);
+            border:1px solid rgba(0,0,0,0.06);
+          ">
+            <div style="font-size:11px;color:rgba(0,0,0,0.4);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;">
+              Invitation Code
+            </div>
+            <div style="font-size:26px;font-weight:600;letter-spacing:3px;font-family:'SFMono-Regular','Courier New',monospace;color:black;">
+              %s
+            </div>
+          </div>
+        </td></tr>
+
+        <tr><td style="padding:24px 32px 32px;">
+          <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:black;">How to join:</p>
+          <ol style="margin:0;padding-left:18px;font-size:14px;color:rgba(0,0,0,0.75);line-height:1.6;">
+            <li>Download Cube from the <strong>App Store</strong> or visit <strong>cubemoney.io</strong></li>
+            <li>Sign in or create an account</li>
+            <li>Enter the code above</li>
+            <li>Secure your spot & begin your cycle</li>
+          </ol>
+        </td></tr>
+
+        <tr><td style="padding:12px 0 24px;">
+          <div style="height:1px;background:#f0f0f0;margin:0 32px 16px;"></div>
+          <p style="margin:0;text-align:center;font-size:11px;color:#999;">
+            Valid for <strong>48 hours</strong> · Do not forward
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+""", cubeName, invitationCode);
     }
 
     /**
