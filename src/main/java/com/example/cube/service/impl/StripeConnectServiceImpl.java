@@ -43,28 +43,33 @@ public class StripeConnectServiceImpl implements StripeConnectService {
         UserDetails user = userDetailsRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // If user already has an account, just generate a new link
         if (user.getStripeAccountId() != null) {
             System.out.println("User already has Stripe account: " + user.getStripeAccountId());
             return generateAccountLink(user.getStripeAccountId());
         }
 
         try {
-            // Create Express Connected Account for receiving payouts
             AccountCreateParams params = AccountCreateParams.builder()
                     .setType(AccountCreateParams.Type.EXPRESS)
                     .setCountry("US")
                     .setBusinessType(AccountCreateParams.BusinessType.INDIVIDUAL)
+
+                    // ✅ FULL CAPABILITIES (Transfers + Card Payments)
                     .setCapabilities(AccountCreateParams.Capabilities.builder()
                             .setTransfers(AccountCreateParams.Capabilities.Transfers.builder()
                                     .setRequested(true)
                                     .build())
+                            .setCardPayments(AccountCreateParams.Capabilities.CardPayments.builder()
+                                    .setRequested(true)
+                                    .build())
                             .build())
+
                     .setBusinessProfile(AccountCreateParams.BusinessProfile.builder()
-                            .setMcc("6012")  // Financial institution - member-owned
+                            .setMcc("6012")
                             .setProductDescription("Personal savings pool participant")
-                            .setUrl(null)  // No website required
+                            .setUrl(null)
                             .build())
+
                     .setSettings(AccountCreateParams.Settings.builder()
                             .setPayouts(AccountCreateParams.Settings.Payouts.builder()
                                     .setSchedule(AccountCreateParams.Settings.Payouts.Schedule.builder()
@@ -72,15 +77,14 @@ public class StripeConnectServiceImpl implements StripeConnectService {
                                             .build())
                                     .build())
                             .build())
+
                     .putMetadata("user_id", userId.toString())
                     .build();
 
             Account account = Account.create(params);
 
-            // Save account ID to database
             user.setStripeAccountId(account.getId());
 
-            // ✨ Also create a Stripe Customer for making payments
             if (user.getStripeCustomerId() == null) {
                 CustomerCreateParams customerParams = CustomerCreateParams.builder()
                         .putMetadata("user_id", userId.toString())
@@ -88,18 +92,17 @@ public class StripeConnectServiceImpl implements StripeConnectService {
 
                 Customer customer = Customer.create(customerParams);
                 user.setStripeCustomerId(customer.getId());
-                System.out.println("✅ Created Stripe customer: " + customer.getId());
+                System.out.println("Created Stripe customer: " + customer.getId());
             }
 
             userDetailsRepository.save(user);
 
-            System.out.println("✅ Created Stripe Connect account: " + account.getId());
+            System.out.println("Created Stripe Connect account: " + account.getId());
 
-            // Generate onboarding link
             return generateAccountLink(account.getId());
 
         } catch (StripeException e) {
-            System.err.println("❌ Failed to create Stripe account: " + e.getMessage());
+            System.err.println("Failed to create Stripe account: " + e.getMessage());
             throw new RuntimeException("Failed to create Stripe account: " + e.getMessage());
         }
     }
@@ -112,23 +115,21 @@ public class StripeConnectServiceImpl implements StripeConnectService {
 
             Optional<UserDetails> userOpt = userDetailsRepository.findByStripeAccountId(accountId);
             if (userOpt.isEmpty()) {
-                System.err.println("⚠️ No user found with stripe_account_id: " + accountId);
+                System.err.println("No user found with stripe_account_id: " + accountId);
                 return;
             }
 
             UserDetails user = userOpt.get();
-
-            // Check if payouts are enabled (only thing we care about)
             Boolean payoutsEnabled = account.getPayoutsEnabled();
 
-            // Update payout status
             user.setStripePayoutsEnabled(payoutsEnabled);
             userDetailsRepository.save(user);
 
-            System.out.println("✅ Updated payout status for user " + user.getUser_id() + ": payoutsEnabled=" + payoutsEnabled);
+            System.out.println("Updated payout status for user " + user.getUser_id()
+                    + ": payoutsEnabled=" + payoutsEnabled);
 
         } catch (StripeException e) {
-            System.err.println("❌ Failed to retrieve account status: " + e.getMessage());
+            System.err.println("Failed to retrieve account status: " + e.getMessage());
         }
     }
 
@@ -143,12 +144,11 @@ public class StripeConnectServiceImpl implements StripeConnectService {
                     .build();
 
             AccountLink accountLink = AccountLink.create(params);
-
-            System.out.println("✅ Generated onboarding link for account: " + accountId);
+            System.out.println("Generated onboarding link for account: " + accountId);
             return accountLink.getUrl();
 
         } catch (StripeException e) {
-            System.err.println("❌ Failed to generate account link: " + e.getMessage());
+            System.err.println("Failed to generate account link: " + e.getMessage());
             throw new RuntimeException("Failed to generate onboarding link: " + e.getMessage());
         }
     }
