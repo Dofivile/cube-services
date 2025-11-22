@@ -27,4 +27,11 @@ public interface EmailService {
      * @param cycleNumber The cycle number for which the winner was selected
      */
     void sendWinnerNotificationEmails(Cube cube, CubeMember winner, BigDecimal payoutAmount, Integer cycleNumber);
+
+    /**
+     * Check if cube is ready and send emails to admin, members, and reviewer
+     * 
+     * @param cubeId The cube to check
+     */
+    void checkAndSendCubeReadyEmails(UUID cubeId);
 }

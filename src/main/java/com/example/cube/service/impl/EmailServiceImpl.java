@@ -4,6 +4,7 @@ import com.example.cube.dto.MemberWithContact;
 import com.example.cube.model.Cube;
 import com.example.cube.model.CubeMember;
 import com.example.cube.repository.CubeMemberRepository;
+import com.example.cube.repository.CubeRepository;
 import com.example.cube.service.EmailService;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class EmailServiceImpl implements EmailService {
 
     @Autowired
     private CubeMemberRepository cubeMemberRepository;
+
+    @Autowired
+    private CubeRepository cubeRepository;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -386,6 +390,251 @@ public class EmailServiceImpl implements EmailService {
                 userId,
                 payoutAmount,
                 cycleNumber,
+                cube.getCubeId()
+        );
+    }
+
+    @Override
+    public void checkAndSendCubeReadyEmails(UUID cubeId) {
+        try {
+            // 1. Get the cube
+            Cube cube = cubeRepository.findById(cubeId).orElse(null);
+            if (cube == null) {
+                System.out.println("⚠️ Cube not found: " + cubeId);
+                return;
+            }
+
+            // 2. Only check if cube is still in draft status (status_id = 1)
+            if (cube.getStatusId() == null || cube.getStatusId() != 1) {
+                System.out.println("⚠️ Cube is not in draft status, skipping readiness check");
+                return;
+            }
+
+            // 3. Check if expected number of members is set
+            Integer expectedMembers = cube.getNumberofmembers();
+            if (expectedMembers == null) {
+                System.out.println("⚠️ Cube has no expected member count set");
+                return;
+            }
+
+            // 4. Get all members
+            List<CubeMember> members = cubeMemberRepository.findByCubeId(cubeId);
+            int actualMemberCount = members.size();
+
+            // 5. Check if member count matches expected
+            if (actualMemberCount < expectedMembers) {
+                System.out.println("ℹ️ Cube not ready: " + actualMemberCount + "/" + expectedMembers + " members joined");
+                return;
+            }
+
+            // 6. Check if all members have paid (status_id = 2 means "paid")
+            boolean allPaid = members.stream()
+                    .allMatch(m -> m.getStatusId() != null && m.getStatusId() == 2);
+            
+            if (!allPaid) {
+                long paidCount = members.stream()
+                        .filter(m -> m.getStatusId() != null && m.getStatusId() == 2)
+                        .count();
+                System.out.println("ℹ️ Cube not ready: Only " + paidCount + "/" + actualMemberCount + " members have paid");
+                return;
+            }
+
+            // 7. Cube is ready! Send emails
+            System.out.println("✅ Cube is ready: " + cube.getName() + " - Sending ready emails...");
+            
+            String resendApiUrl = "https://api.resend.com/emails";
+            
+            // Get all member contact info
+            List<MemberWithContact> membersWithContact = cubeMemberRepository.findMembersWithContactInfo(cubeId);
+            
+            // Send to all members
+            for (MemberWithContact member : membersWithContact) {
+                boolean isAdmin = member.getRoleId() != null && member.getRoleId() == 1;
+                
+                if (isAdmin) {
+                    // Send admin email
+                    String adminSubject = "🎉 " + cube.getName() + " is ready to start!";
+                    String adminHtml = buildCubeReadyAdminEmail(cube, members.size());
+                    sendEmail(resendApiUrl, member.getEmail(), adminSubject, adminHtml);
+                    System.out.println("✅ Admin ready email sent to: " + member.getEmail());
+                } else {
+                    // Send member email
+                    String memberSubject = "🎉 " + cube.getName() + " is ready!";
+                    String memberHtml = buildCubeReadyMemberEmail(cube, members.size());
+                    sendEmail(resendApiUrl, member.getEmail(), memberSubject, memberHtml);
+                    System.out.println("✅ Member ready email sent to: " + member.getEmail());
+                }
+            }
+            
+            // Send to reviewer (admin email from config)
+            String reviewerSubject = "🔔 Cube Ready for Review: " + cube.getName();
+            String reviewerHtml = buildCubeReadyReviewerEmail(cube, members.size());
+            sendEmail(resendApiUrl, adminEmail, reviewerSubject, reviewerHtml);
+            System.out.println("✅ Reviewer email sent to: " + adminEmail);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error checking/sending cube ready emails: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Build email for admin (cube creator/admin member)
+     */
+    private String buildCubeReadyAdminEmail(Cube cube, int memberCount) {
+        return String.format("""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+                    <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+                        <tr>
+                            <td align="center">
+                                <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; overflow: hidden;">
+                                    <tr>
+                                        <td style="background: #10b981; padding: 20px;">
+                                            <h2 style="color: white; margin: 0;">🎉 Your Cube is Ready!</h2>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 30px;">
+                                            <h3 style="margin-top: 0; color: #1f2937;">%s</h3>
+                                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+                                                All %d members have joined and completed their payments. Your cube is ready to start!
+                                            </p>
+                                            
+                                            <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                                                <p style="margin: 0; color: #1e40af;"><strong>Action Required:</strong> Please start the cube to begin the first cycle.</p>
+                                            </div>
+                                            
+                                            <div style="text-align: center; margin: 30px 0;">
+                                                <a href="your-app-link" style="background: #10b981; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+                                                    Start Cube Now
+                                                </a>
+                                            </div>
+                                            
+                                            <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                                                All members are waiting for you to start the cube.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """,
+                cube.getName(),
+                memberCount
+        );
+    }
+
+    /**
+     * Build email for regular members
+     */
+    private String buildCubeReadyMemberEmail(Cube cube, int memberCount) {
+        return String.format("""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+                    <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+                        <tr>
+                            <td align="center">
+                                <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; overflow: hidden;">
+                                    <tr>
+                                        <td style="background: #10b981; padding: 20px;">
+                                            <h2 style="color: white; margin: 0;">🎉 Cube is Ready!</h2>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 30px;">
+                                            <h3 style="margin-top: 0; color: #1f2937;">%s</h3>
+                                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+                                                Great news! All %d members have joined and completed their payments.
+                                            </p>
+                                            
+                                            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                                                <p style="margin: 0; color: #92400e;">
+                                                    <strong>Waiting on admin to start the cube.</strong> You'll receive another notification once the cube begins.
+                                                </p>
+                                            </div>
+                                            
+                                            <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                                                The first cycle will begin as soon as the admin starts the cube. Stay tuned!
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """,
+                cube.getName(),
+                memberCount
+        );
+    }
+
+    /**
+     * Build email for reviewer (system admin)
+     */
+    private String buildCubeReadyReviewerEmail(Cube cube, int memberCount) {
+        return String.format("""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+                    <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+                        <tr>
+                            <td align="center">
+                                <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; overflow: hidden;">
+                                    <tr>
+                                        <td style="background: #6366f1; padding: 20px;">
+                                            <h2 style="color: white; margin: 0;">🔔 Cube Ready for Review</h2>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 30px;">
+                                            <h3 style="margin-top: 0; color: #1f2937;">Cube Details</h3>
+                                            <table style="width: 100%%; border-collapse: collapse;">
+                                                <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube Name:</strong></td><td style="padding: 8px 0;">%s</td></tr>
+                                                <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Members:</strong></td><td style="padding: 8px 0;">%d</td></tr>
+                                                <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Status:</strong></td><td style="padding: 8px 0; color: #10b981;"><strong>Ready to Start</strong></td></tr>
+                                                <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
+                                            </table>
+                                            
+                                            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                                                <p style="margin: 0; color: #92400e;">
+                                                    <strong>FYI:</strong> Waiting on admin to start the cube. All payments verified.
+                                                </p>
+                                            </div>
+                                            
+                                            <p style="color: #6b7280; font-size: 14px;">
+                                                All members have joined and paid. The admin has been notified to start the cube.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """,
+                cube.getName(),
+                memberCount,
                 cube.getCubeId()
         );
     }

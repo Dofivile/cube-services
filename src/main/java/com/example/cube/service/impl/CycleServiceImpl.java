@@ -137,16 +137,22 @@ public class CycleServiceImpl implements CycleService {
             throw new RuntimeException("Winner already selected for cycle " + currentCycle);
         }
 
-        // 5. Get all members
+        // 5. Verify all members have paid for current cycle before selecting winner
+        if (!haveAllMembersPaid(cubeId, currentCycle)) {
+            System.out.println("⚠️ Not all members have paid for cycle " + currentCycle + ". Skipping winner selection.");
+            return;  // Exit early, don't select winner yet
+        }
+
+        // 6. Get all members
         List<CubeMember> allMembers = cubeMemberRepository.findByCubeId(cubeId);
 
-        // 6. Get members who have already won
+        // 7. Get members who have already won
         List<CycleWinner> winners = cycleWinnerRepository.findByCubeIdOrderByCycleNumberAsc(cubeId);
         Set<UUID> winnerUserIds = winners.stream()
                 .map(CycleWinner::getUserId)
                 .collect(Collectors.toSet());
 
-        // 7. Find members who haven't won yet
+        // 8. Find members who haven't won yet
         List<CubeMember> eligibleMembers = allMembers.stream()
                 .filter(member -> !winnerUserIds.contains(member.getUserId()))
                 .collect(Collectors.toList());
@@ -161,15 +167,15 @@ public class CycleServiceImpl implements CycleService {
             return;
         }
 
-        // 8. Select random winner from eligible members
+        // 9. Select random winner from eligible members
         SecureRandom random = new SecureRandom();
         CubeMember winner = eligibleMembers.get(random.nextInt(eligibleMembers.size()));
 
-        // 9. Calculate payout amount
+        // 10. Calculate payout amount
         BigDecimal payoutAmount = cube.getAmountPerCycle()
                 .multiply(BigDecimal.valueOf(cube.getNumberofmembers()));
 
-        // 10. Record winner in cycle_winners table
+        // 11. Record winner in cycle_winners table
         CycleWinner cycleWinner = new CycleWinner();
         cycleWinner.setCubeId(cubeId);
         cycleWinner.setMemberId(winner.getMemberId());
@@ -194,7 +200,7 @@ public class CycleServiceImpl implements CycleService {
         // ✅ ADD: Reset all member payment statuses for the new cycle
         resetMemberPaymentStatuses(cubeId);
 
-        // 9. Send notification emails to all members and admin
+        // 12. Send notification emails to all members and admin
         try {
             emailService.sendWinnerNotificationEmails(cube, winner, payoutAmount, currentCycle);
         } catch (Exception e) {
@@ -224,19 +230,25 @@ public class CycleServiceImpl implements CycleService {
 
     // Helper method to check if all members have paid for a cycle
     private boolean haveAllMembersPaid(UUID cubeId, Integer cycleNumber) {
-        // Get total number of members in the cube
-        long totalMembers = cubeMemberRepository.countByCubeId(cubeId);
+        // Get all members in the cube
+        List<CubeMember> members = cubeMemberRepository.findByCubeId(cubeId);
+        
+        if (members.isEmpty()) {
+            return false;
+        }
 
-        // Count how many members have completed payment for this cycle
-        long paidMembers = paymentTransactionRepository
-                .countByCubeIdAndCycleNumberAndTypeIdAndStatusId(
-                        cubeId,
-                        cycleNumber -1,
-                        1,  // typeId = 1 (contribution)
-                        2   // statusId = 2 (completed)
-                );
-
-        return paidMembers >= totalMembers;
+        // Check if all members have status_id = 2 (paid)
+        boolean allPaid = members.stream()
+                .allMatch(m -> m.getStatusId() != null && m.getStatusId() == 2);
+        
+        if (!allPaid) {
+            long paidCount = members.stream()
+                    .filter(m -> m.getStatusId() != null && m.getStatusId() == 2)
+                    .count();
+            System.out.println("   Payment status: " + paidCount + "/" + members.size() + " members have paid");
+        }
+        
+        return allPaid;
     }
 
     // ✅ ADD: Helper method to reset all member payment statuses
