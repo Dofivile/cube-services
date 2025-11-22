@@ -127,7 +127,7 @@ public class EmailServiceImpl implements EmailService {
             }
 
             // 4. Send admin notification
-            sendAdminNotificationEmail(resendApiUrl, cube, winnerName, winnerEmail, payoutAmount, cycleNumber);
+            sendAdminNotificationEmail(resendApiUrl, cube, winnerName, winnerEmail, payoutAmount, cycleNumber, winner.getMemberId(), winner.getUserId());
 
             System.out.println("✅ Winner emails sent for cube " + cube.getName() +
                     " (" + emailsSent + "/" + members.size() + " members notified)");
@@ -164,10 +164,10 @@ public class EmailServiceImpl implements EmailService {
     /**
      * Send admin notification for payout review
      */
-    private void sendAdminNotificationEmail(String apiUrl, Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount, Integer cycleNumber) {
+    private void sendAdminNotificationEmail(String apiUrl, Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount, Integer cycleNumber, UUID memberId, UUID userId) {
         try {
             String subject = "🔔 Cube Payout Review — " + cube.getName() + " (Cycle " + cycleNumber + ")";
-            String htmlBody = buildAdminEmailHtml(cube, winnerName, winnerEmail, payoutAmount, cycleNumber);
+            String htmlBody = buildAdminEmailHtml(cube, winnerName, winnerEmail, payoutAmount, cycleNumber, memberId, userId);
 
             sendEmail(apiUrl, adminEmail, subject, htmlBody);
             System.out.println("✅ Admin notification sent for cube " + cube.getName());
@@ -329,7 +329,7 @@ public class EmailServiceImpl implements EmailService {
     /**
      * Build HTML email template for admin notification
      */
-    private String buildAdminEmailHtml(Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount, Integer cycleNumber) {
+    private String buildAdminEmailHtml(Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount, Integer cycleNumber, UUID memberId, UUID userId) {
         return String.format("""
                 <!DOCTYPE html>
                 <html>
@@ -355,6 +355,8 @@ public class EmailServiceImpl implements EmailService {
                                                     <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube:</strong></td><td style="padding: 8px 0;">%s</td></tr>
                                                     <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Winner:</strong></td><td style="padding: 8px 0;">%s</td></tr>
                                                     <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Winner Email:</strong></td><td style="padding: 8px 0;">%s</td></tr>
+                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Member ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
+                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>User ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
                                                     <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Amount:</strong></td><td style="padding: 8px 0; color: #059669; font-size: 18px;"><strong>$%s</strong></td></tr>
                                                     <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cycle:</strong></td><td style="padding: 8px 0;">%d</td></tr>
                                                     <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
@@ -380,6 +382,8 @@ public class EmailServiceImpl implements EmailService {
                 cube.getName(),
                 winnerName,
                 winnerEmail != null ? winnerEmail : "N/A",
+                memberId,
+                userId,
                 payoutAmount,
                 cycleNumber,
                 cube.getCubeId()
