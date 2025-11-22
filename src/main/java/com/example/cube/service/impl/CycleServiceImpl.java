@@ -19,7 +19,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class CycleServiceImpl implements CycleService {
@@ -135,13 +137,23 @@ public class CycleServiceImpl implements CycleService {
             throw new RuntimeException("Winner already selected for cycle " + currentCycle);
         }
 
-        // 5. Get unpaid members
-        List<CubeMember> unpaidMembers = cubeMemberRepository
-                .findByCubeIdAndHasReceivedPayout(cubeId, false);
+        // 5. Get all members
+        List<CubeMember> allMembers = cubeMemberRepository.findByCubeId(cubeId);
 
-        // Handle case where all members have been paid
-        if (unpaidMembers.isEmpty()) {
-            System.out.println("✅ All members have received payouts. Completing cube.");
+        // 6. Get members who have already won
+        List<CycleWinner> winners = cycleWinnerRepository.findByCubeIdOrderByCycleNumberAsc(cubeId);
+        Set<UUID> winnerUserIds = winners.stream()
+                .map(CycleWinner::getUserId)
+                .collect(Collectors.toSet());
+
+        // 7. Find members who haven't won yet
+        List<CubeMember> eligibleMembers = allMembers.stream()
+                .filter(member -> !winnerUserIds.contains(member.getUserId()))
+                .collect(Collectors.toList());
+
+        // Handle case where all members have won
+        if (eligibleMembers.isEmpty()) {
+            System.out.println("✅ All members have won their cycles. Completing cube.");
             cube.setStatusId(3);  // completed
             cube.setEndDate(Instant.now());
             cube.setNextPayoutDate(null);
@@ -149,15 +161,15 @@ public class CycleServiceImpl implements CycleService {
             return;
         }
 
-        // 6. Select random winner
+        // 8. Select random winner from eligible members
         SecureRandom random = new SecureRandom();
-        CubeMember winner = unpaidMembers.get(random.nextInt(unpaidMembers.size()));
+        CubeMember winner = eligibleMembers.get(random.nextInt(eligibleMembers.size()));
 
-        // 7. Calculate payout amount
+        // 9. Calculate payout amount
         BigDecimal payoutAmount = cube.getAmountPerCycle()
                 .multiply(BigDecimal.valueOf(cube.getNumberofmembers()));
 
-        // 8. Record winner in cycle_winners table
+        // 10. Record winner in cycle_winners table
         CycleWinner cycleWinner = new CycleWinner();
         cycleWinner.setCubeId(cubeId);
         cycleWinner.setMemberId(winner.getMemberId());
