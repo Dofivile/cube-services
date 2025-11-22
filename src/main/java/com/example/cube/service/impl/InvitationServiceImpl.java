@@ -15,6 +15,7 @@ import com.example.cube.repository.UserDetailsRepository;
 import com.example.cube.service.EmailService;
 import com.example.cube.service.InvitationService;
 import com.example.cube.service.supabass.SupabaseUserLookupService;
+import com.example.cube.service.CubeReadinessNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,19 +35,22 @@ public class InvitationServiceImpl implements InvitationService {
     private final SupabaseUserLookupService userLookupService;
     private final EmailService emailService;
     private final UserDetailsRepository userDetailsRepository;
+    private final CubeReadinessNotificationService cubeReadinessNotificationService;
 
     @Autowired
     public InvitationServiceImpl(CubeInvitationRepository invitationRepository,
                                  CubeMemberRepository cubeMemberRepository,
                                  CubeRepository cubeRepository,
                                  SupabaseUserLookupService userLookupService,
-                                 EmailService emailService, UserDetailsRepository userDetailsRepository) {
+                                 EmailService emailService, UserDetailsRepository userDetailsRepository,
+                                 CubeReadinessNotificationService cubeReadinessNotificationService) {
         this.invitationRepository = invitationRepository;
         this.cubeMemberRepository = cubeMemberRepository;
         this.cubeRepository = cubeRepository;
         this.userLookupService = userLookupService;
         this.emailService = emailService;
         this.userDetailsRepository = userDetailsRepository;
+        this.cubeReadinessNotificationService = cubeReadinessNotificationService;
     }
 
     @Override
@@ -150,6 +154,8 @@ public class InvitationServiceImpl implements InvitationService {
         response.setResults(results);
         response.setMessage(String.format("Added %d member(s) directly", successCount));
 
+        // Evaluate readiness after membership changes
+        cubeReadinessNotificationService.checkAndNotifyIfReady(cubeId);
         return response;
     }
 
@@ -185,6 +191,9 @@ public class InvitationServiceImpl implements InvitationService {
 
         // 5. ✅ Update invitation record (mark as accepted)
         updateInvitationRecordForUser(cube.getCubeId(), userId);
+
+        // Evaluate readiness after join
+        cubeReadinessNotificationService.checkAndNotifyIfReady(cube.getCubeId());
 
         return new JoinCubeResponse(
                 true,

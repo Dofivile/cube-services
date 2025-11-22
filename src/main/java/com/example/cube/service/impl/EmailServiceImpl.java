@@ -31,6 +31,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${admin.email}")
     private String adminEmail;
 
+    @Value("${cube.email.logo.url}")
+    private String logoUrl;
+
     @Autowired
     private CubeMemberRepository cubeMemberRepository;
 
@@ -201,7 +204,7 @@ public class EmailServiceImpl implements EmailService {
       ">
 
         <tr><td align="center" style="padding:40px 32px 24px;background:#f9f9f9;">
-          <img src="https://cubemoney.io/logo-black.png" width="64" height="64" alt="Cube" style="display:block;margin:0 auto;">
+          <img src="%s" width="64" height="64" alt="Cube" style="display:block;margin:0 auto;">
         </td></tr>
 
         <tr><td align="center" style="padding:24px 32px 16px;background:#ffffff;">
@@ -261,7 +264,7 @@ public class EmailServiceImpl implements EmailService {
   </table>
 </body>
 </html>
-""", cubeName, invitationCode);
+""", logoUrl, cubeName, invitationCode);
     }
 
     /**

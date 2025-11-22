@@ -4,6 +4,7 @@ import com.example.cube.dto.response.PaymentIntentResponse;
 import com.example.cube.model.*;
 import com.example.cube.repository.*;
 import com.example.cube.service.StripePaymentService;
+import com.example.cube.service.CubeReadinessNotificationService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
@@ -43,6 +44,9 @@ public class StripePaymentServiceImpl implements StripePaymentService {
 
     @Autowired
     private PaymentTransactionRepository paymentTransactionRepository;
+
+    @Autowired
+    private CubeReadinessNotificationService cubeReadinessNotificationService;
 
     @PostConstruct
     public void init() {
@@ -215,6 +219,9 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             }
 
             System.out.println("✅ Card payment recorded: " + paymentIntentId);
+
+            // Re-evaluate readiness after payment
+            cubeReadinessNotificationService.checkAndNotifyIfReady(cubeId);
 
         } catch (Exception e) {
             System.err.println("❌ Error processing card payment: " + e.getMessage());
