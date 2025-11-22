@@ -46,4 +46,10 @@ public interface PaymentTransactionRepository extends JpaRepository<Transaction,
      * Used for transaction history page
      */
     List<Transaction> findByUserIdOrderByCreatedAtDesc(UUID userId);
+    
+    /**
+     * Get recent transactions for a cube, limited to top N
+     * Used for activity feed
+     */
+    List<Transaction> findTop20ByCubeIdOrderByCreatedAtDesc(UUID cubeId);
 }

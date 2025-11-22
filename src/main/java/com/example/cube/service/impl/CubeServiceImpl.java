@@ -1,14 +1,10 @@
 package com.example.cube.service.impl;
 
 import com.example.cube.dto.request.CreateCubeRequest;
+import com.example.cube.dto.response.CubeActivityResponse;
 import com.example.cube.mapper.CubeMapper;
-import com.example.cube.model.Cube;
-import com.example.cube.model.CubeMember;
-import com.example.cube.repository.CubeMemberRepository;
-import com.example.cube.repository.CubeRepository;
-import com.example.cube.repository.DurationOptionRepository;
-import com.example.cube.repository.GoalTypeRepository;
-import com.example.cube.model.GoalType;
+import com.example.cube.model.*;
+import com.example.cube.repository.*;
 import com.example.cube.service.CubeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,6 +30,15 @@ public class CubeServiceImpl implements CubeService {
 
     @Autowired
     private GoalTypeRepository goalTypeRepo;
+    
+    @Autowired
+    private PaymentTransactionRepository paymentTransactionRepository;
+    
+    @Autowired
+    private CycleWinnerRepository cycleWinnerRepository;
+    
+    @Autowired
+    private UserDetailsRepository userDetailsRepository;
 
     private static final String INVITATION_CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int INVITATION_CODE_LENGTH = 6;
@@ -139,6 +145,89 @@ public class CubeServiceImpl implements CubeService {
     @Override
     public Cube getCubeById(UUID cubeId) {
         return cubeRepository.findById(cubeId).orElseThrow(() -> new RuntimeException("Cube not found with ID: " + cubeId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CubeActivityResponse> getCubeActivity(UUID cubeId, int limit) {
+        List<CubeActivityResponse> activities = new ArrayList<>();
+        
+        // 1. Get recent payments (transactions)
+        List<Transaction> payments = paymentTransactionRepository.findTop20ByCubeIdOrderByCreatedAtDesc(cubeId);
+        for (Transaction payment : payments) {
+            CubeActivityResponse activity = new CubeActivityResponse();
+            activity.setActivityType("PAYMENT");
+            activity.setUserId(payment.getUserId());
+            activity.setTimestamp(payment.getCreatedAt());
+            activity.setAmount(payment.getAmount());
+            activity.setCycleNumber(payment.getCycleNumber());
+            activity.setColorCode("green");
+            
+            // Get user name
+            String userName = getUserName(payment.getUserId());
+            activity.setUserName(userName);
+            activity.setActivityText(userName + " contributed to pool");
+            
+            activities.add(activity);
+        }
+        
+        // 2. Get recent winners
+        List<CycleWinner> winners = cycleWinnerRepository.findTop10ByCubeIdOrderBySelectedAtDesc(cubeId);
+        for (CycleWinner winner : winners) {
+            CubeActivityResponse activity = new CubeActivityResponse();
+            activity.setActivityType("WINNER");
+            activity.setUserId(winner.getUserId());
+            activity.setTimestamp(winner.getSelectedAt());
+            activity.setAmount(winner.getPayoutAmount());
+            activity.setCycleNumber(winner.getCycleNumber());
+            activity.setColorCode("yellow");
+            
+            String userName = getUserName(winner.getUserId());
+            activity.setUserName(userName);
+            activity.setActivityText(userName + " won round " + winner.getCycleNumber());
+            
+            activities.add(activity);
+        }
+        
+        // 3. Get recent member joins
+        List<CubeMember> members = cubeMemberRepository.findTop20ByCubeIdOrderByJoinedAtDesc(cubeId);
+        for (CubeMember member : members) {
+            CubeActivityResponse activity = new CubeActivityResponse();
+            activity.setActivityType("MEMBER_JOIN");
+            activity.setUserId(member.getUserId());
+            activity.setTimestamp(member.getJoinedAt());
+            activity.setColorCode("blue");
+            
+            String userName = getUserName(member.getUserId());
+            activity.setUserName(userName);
+            activity.setActivityText(userName + " joined the cube");
+            
+            activities.add(activity);
+        }
+        
+        // 4. Sort by timestamp (newest first) and limit
+        return activities.stream()
+                .sorted((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()))
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Helper method to get user display name
+     */
+    private String getUserName(UUID userId) {
+        return userDetailsRepository.findById(userId)
+                .map(u -> {
+                    String first = u.getFirstName();
+                    String last = u.getLastName();
+                    if (first != null && last != null && !last.isEmpty()) {
+                        return first + " " + last.substring(0, 1) + ".";
+                    } else if (first != null) {
+                        return first;
+                    }
+                    return "User";
+                })
+                .orElse("Unknown User");
     }
 
 }

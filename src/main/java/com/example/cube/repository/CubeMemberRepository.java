@@ -40,5 +40,11 @@ public interface CubeMemberRepository extends JpaRepository<CubeMember, UUID> {
     WHERE cube_id = :cubeId
     """, nativeQuery = true)
     List<MemberWithContact> findMembersWithContactInfo(@Param("cubeId") UUID cubeId);
+    
+    /**
+     * Get recent members who joined a cube, ordered by most recent first
+     * Used for activity feed
+     */
+    List<CubeMember> findTop20ByCubeIdOrderByJoinedAtDesc(UUID cubeId);
 
 }

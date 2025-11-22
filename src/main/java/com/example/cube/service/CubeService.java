@@ -1,6 +1,7 @@
 package com.example.cube.service;
 
 import com.example.cube.dto.request.CreateCubeRequest;
+import com.example.cube.dto.response.CubeActivityResponse;
 import com.example.cube.model.Cube;
 import java.util.List;
 import java.util.UUID;
@@ -18,5 +19,13 @@ public interface CubeService {
 
     // Retrieve a single Cube by ID
     Cube getCubeById(UUID cubeId);
+    
+    /**
+     * Get recent activity for a cube (payments, winners, new members)
+     * @param cubeId Cube ID
+     * @param limit Maximum number of activities to return
+     * @return List of activities sorted by most recent first
+     */
+    List<CubeActivityResponse> getCubeActivity(UUID cubeId, int limit);
 
 }

@@ -22,4 +22,10 @@ public interface CycleWinnerRepository extends JpaRepository<CycleWinner, UUID> 
 
     // Find winners that haven't been paid yet
     List<CycleWinner> findByPayoutSent(Boolean payoutSent);
+    
+    /**
+     * Get recent winners for a cube, ordered by most recent first
+     * Used for activity feed
+     */
+    List<CycleWinner> findTop10ByCubeIdOrderBySelectedAtDesc(UUID cubeId);
 }

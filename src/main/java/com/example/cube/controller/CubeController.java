@@ -5,10 +5,12 @@ import com.example.cube.dto.request.GetCubeRequest;
 import com.example.cube.dto.request.GetUserCubesRequest;
 import com.example.cube.dto.request.StartCubeRequest;
 import com.example.cube.dto.response.CreateCubeResponse;
+import com.example.cube.dto.response.CubeActivityResponse;
 import com.example.cube.dto.response.GetCubeResponse;
 import com.example.cube.dto.response.GetUserCubesResponse;
 import com.example.cube.mapper.CubeMapper;
 import com.example.cube.model.Cube;
+import com.example.cube.repository.CubeMemberRepository;
 import com.example.cube.security.AuthenticationService;
 import com.example.cube.service.CubeService;
 import com.example.cube.service.CycleService;
@@ -34,13 +36,16 @@ public class CubeController {
     private final CubeMapper cubeMapper;
     private final AuthenticationService authenticationService;
     private final CycleService cycleService;
+    private final CubeMemberRepository cubeMemberRepository;
 
     @Autowired
-    public CubeController(CubeService cubeService, CubeMapper cubeMapper, AuthenticationService authenticationService, CycleService cycleService) {
+    public CubeController(CubeService cubeService, CubeMapper cubeMapper, AuthenticationService authenticationService, 
+                          CycleService cycleService, CubeMemberRepository cubeMemberRepository) {
         this.cubeService = cubeService;
         this.cubeMapper = cubeMapper;
         this.authenticationService = authenticationService;
         this.cycleService = cycleService;
+        this.cubeMemberRepository = cubeMemberRepository;
     }
 
     @PostMapping("/create")
@@ -111,5 +116,30 @@ public class CubeController {
             errorResponse.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
         }
+    }
+    
+    /**
+     * Get recent activity for a cube (payments, winners, member joins)
+     * 
+     * GET /api/cubes/{cubeId}/activity?limit=20
+     */
+    @GetMapping("/{cubeId}/activity")
+    public ResponseEntity<List<CubeActivityResponse>> getCubeActivity(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable UUID cubeId,
+            @RequestParam(defaultValue = "20") int limit) {
+        
+        // Validate auth token and extract user ID
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+        
+        // Verify user is a member of this cube
+        if (!cubeMemberRepository.existsByCubeIdAndUserId(cubeId, userId)) {
+            throw new RuntimeException("You are not a member of this cube");
+        }
+        
+        // Get activity feed
+        List<CubeActivityResponse> activities = cubeService.getCubeActivity(cubeId, limit);
+        
+        return ResponseEntity.ok(activities);
     }
 }
