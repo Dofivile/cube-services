@@ -7,10 +7,13 @@ import com.example.cube.service.StripePaymentService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
+import com.stripe.model.EphemeralKey;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerUpdateParams;
+import com.stripe.param.EphemeralKeyCreateParams;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.net.RequestOptions;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -113,12 +116,20 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                                     .setEnabled(true)
                                     .build()
                     )
-                    .setSetupFutureUsage(PaymentIntentCreateParams.SetupFutureUsage.OFF_SESSION)
                     .putAllMetadata(metadata)
                     .setDescription("Cube payment for " + cube.getName() + " - Cycle " + cycleNumber)
                     .build();
 
             PaymentIntent paymentIntent = PaymentIntent.create(params);
+
+            // Ephemeral key is required by PaymentSheet to load/save customer payment methods
+            RequestOptions ekRequestOptions = RequestOptions.builder()
+                    .setStripeVersionOverride("2024-10-28")
+                    .build();
+            EphemeralKeyCreateParams ekParams = EphemeralKeyCreateParams.builder()
+                    .setCustomer(customerId)
+                    .build();
+            EphemeralKey ephemeralKey = EphemeralKey.create(ekParams, ekRequestOptions);
 
             // ============================
             // 🔍 DEBUG PAYMENT INTENT
@@ -133,7 +144,8 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             return new PaymentIntentResponse(
                     paymentIntent.getClientSecret(),
                     paymentIntent.getId(),
-                    customerId
+                    customerId,
+                    ephemeralKey.getSecret()
             );
 
         } catch (StripeException e) {

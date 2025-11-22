@@ -4,11 +4,13 @@ public class PaymentIntentResponse {
     private String clientSecret;
     private String paymentIntentId;
     private String customerId;
+    private String ephemeralKeySecret;
 
-    public PaymentIntentResponse(String clientSecret, String paymentIntentId, String customerId) {
+    public PaymentIntentResponse(String clientSecret, String paymentIntentId, String customerId, String ephemeralKeySecret) {
         this.clientSecret = clientSecret;
         this.paymentIntentId = paymentIntentId;
         this.customerId = customerId;
+        this.ephemeralKeySecret = ephemeralKeySecret;
     }
 
     // Getters and Setters
@@ -20,4 +22,7 @@ public class PaymentIntentResponse {
 
     public String getCustomerId() { return customerId; }
     public void setCustomerId(String customerId) { this.customerId = customerId; }
+
+    public String getEphemeralKeySecret() { return ephemeralKeySecret; }
+    public void setEphemeralKeySecret(String ephemeralKeySecret) { this.ephemeralKeySecret = ephemeralKeySecret; }
 }
