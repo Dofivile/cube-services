@@ -127,6 +127,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                     .build();
             EphemeralKeyCreateParams ekParams = EphemeralKeyCreateParams.builder()
                     .setCustomer(customerId)
+                    .setStripeVersion("2024-11-20.acacia")
                     .build();
             EphemeralKey ephemeralKey = EphemeralKey.create(ekParams, ekRequestOptions);
 
