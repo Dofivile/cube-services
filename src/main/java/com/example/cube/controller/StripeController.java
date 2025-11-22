@@ -311,6 +311,9 @@ public class StripeController {
             case "account.updated":
                 handleAccountUpdated(event);
                 break;
+            case "capability.updated":
+                handleCapabilityUpdated(event);
+                break;
             case "payout.paid":
                 handlePayoutPaid(event);
                 break;
@@ -427,6 +430,32 @@ public class StripeController {
 
         } catch (Exception e) {
             System.err.println("❌ Error handling payout.failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void handleCapabilityUpdated(Event event) {
+        try {
+            System.out.println("🔍 Processing capability.updated...");
+            
+            // Get the account ID from the event data
+            String rawJson = event.getData().getObject().toJson();
+            JsonObject data = JsonParser.parseString(rawJson).getAsJsonObject();
+            
+            if (!data.has("account")) {
+                System.err.println("❌ Missing account ID in capability.updated event");
+                return;
+            }
+            
+            String accountId = data.get("account").getAsString();
+            System.out.println("  Account ID: " + accountId);
+            
+            // Update the account status (this will check payouts_enabled)
+            stripeConnectService.updateAccountStatus(accountId);
+            System.out.println("✅ Capability status updated successfully");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error handling capability.updated: " + e.getMessage());
             e.printStackTrace();
         }
     }
