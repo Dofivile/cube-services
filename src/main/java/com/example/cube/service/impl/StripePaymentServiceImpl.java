@@ -124,7 +124,6 @@ public class StripePaymentServiceImpl implements StripePaymentService {
 
             // Ephemeral key is required by PaymentSheet to load/save customer payment methods
             RequestOptions ekRequestOptions = RequestOptions.builder()
-                    .setStripeVersionOverride("2024-10-28")
                     .build();
             EphemeralKeyCreateParams ekParams = EphemeralKeyCreateParams.builder()
                     .setCustomer(customerId)
