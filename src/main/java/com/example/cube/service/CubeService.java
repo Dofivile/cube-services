@@ -2,6 +2,7 @@ package com.example.cube.service;
 
 import com.example.cube.dto.request.CreateCubeRequest;
 import com.example.cube.dto.response.CubeActivityResponse;
+import com.example.cube.dto.response.WinnerResponse;
 import com.example.cube.model.Cube;
 import java.util.List;
 import java.util.UUID;
@@ -27,5 +28,12 @@ public interface CubeService {
      * @return List of activities sorted by most recent first
      */
     List<CubeActivityResponse> getCubeActivity(UUID cubeId, int limit);
+
+    /**
+     * Get all previous winners for a cube
+     * @param cubeId Cube ID
+     * @return List of winners with user details, ordered by cycle number
+     */
+    List<WinnerResponse> getPreviousWinners(UUID cubeId);
 
 }

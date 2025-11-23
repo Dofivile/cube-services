@@ -157,9 +157,9 @@ public class CycleServiceImpl implements CycleService {
                 .filter(member -> !winnerUserIds.contains(member.getUserId()))
                 .collect(Collectors.toList());
 
-        // Handle case where all members have won
+        // Safety check: if all members have won (shouldn't happen with new logic, but defensive)
         if (eligibleMembers.isEmpty()) {
-            System.out.println("✅ All members have won their cycles. Completing cube.");
+            System.out.println("✅ All members have won their cycles. Completing cube (safety check).");
             cube.setStatusId(3);  // completed
             cube.setEndDate(Instant.now());
             cube.setNextPayoutDate(null);
@@ -192,21 +192,38 @@ public class CycleServiceImpl implements CycleService {
         System.out.println("   Winner: " + winner.getUserId());
         System.out.println("   Amount: $" + payoutAmount);
 
-        // ✅ ADD: Increment cycle number BEFORE resetting statuses
-        cube.setCurrentCycle(currentCycle + 1);
-        cube.setNextPayoutDate(calculateNextPayoutDate(cube));
-        cubeRepository.save(cube);
+        // Check if this was the last member to win
+        List<CycleWinner> allWinnersNow = cycleWinnerRepository.findByCubeIdOrderByCycleNumberAsc(cubeId);
+        Set<UUID> allWinnerUserIds = allWinnersNow.stream()
+                .map(CycleWinner::getUserId)
+                .collect(Collectors.toSet());
 
-        // ✅ ADD: Reset all member payment statuses for the new cycle
-        resetMemberPaymentStatuses(cubeId);
-
-        // 12. Send notification emails to all members and admin
+        // Send notification emails
         try {
             emailService.sendWinnerNotificationEmails(cube, winner, payoutAmount, currentCycle);
         } catch (Exception e) {
             // Log error but don't fail the transaction - winner is already recorded
             System.err.println("⚠️ Failed to send notification emails, but cycle processing completed: " + e.getMessage());
         }
+
+        if (allWinnerUserIds.size() >= allMembers.size()) {
+            // All members have won - complete the cube now
+            System.out.println("✅ All members have won their cycles. Completing cube after cycle " + currentCycle + ".");
+            cube.setStatusId(3);  // completed
+            cube.setEndDate(Instant.now());
+            cube.setNextPayoutDate(null);
+            cubeRepository.save(cube);
+            return;  // Exit without incrementing cycle
+        }
+
+        // Still more members to win - prepare for next cycle
+        System.out.println("📊 Cycle " + currentCycle + " complete. Preparing for cycle " + (currentCycle + 1));
+        cube.setCurrentCycle(currentCycle + 1);
+        cube.setNextPayoutDate(calculateNextPayoutDate(cube));
+        cubeRepository.save(cube);
+
+        // Reset member payment statuses for next cycle
+        resetMemberPaymentStatuses(cubeId);
     }
 
     private Instant calculateNextPayoutDate(Cube cube) {

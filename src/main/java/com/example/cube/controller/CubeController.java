@@ -8,6 +8,7 @@ import com.example.cube.dto.response.CreateCubeResponse;
 import com.example.cube.dto.response.CubeActivityResponse;
 import com.example.cube.dto.response.GetCubeResponse;
 import com.example.cube.dto.response.GetUserCubesResponse;
+import com.example.cube.dto.response.WinnerResponse;
 import com.example.cube.mapper.CubeMapper;
 import com.example.cube.model.Cube;
 import com.example.cube.repository.CubeMemberRepository;
@@ -141,5 +142,29 @@ public class CubeController {
         List<CubeActivityResponse> activities = cubeService.getCubeActivity(cubeId, limit);
         
         return ResponseEntity.ok(activities);
+    }
+    
+    /**
+     * Get previous winners for a cube
+     * 
+     * GET /api/cubes/{cubeId}/winners
+     */
+    @GetMapping("/{cubeId}/winners")
+    public ResponseEntity<List<WinnerResponse>> getPreviousWinners(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable UUID cubeId) {
+        
+        // Validate auth token and extract user ID
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+        
+        // Verify user is a member of this cube
+        if (!cubeMemberRepository.existsByCubeIdAndUserId(cubeId, userId)) {
+            throw new RuntimeException("You are not a member of this cube");
+        }
+        
+        // Get winners
+        List<WinnerResponse> winners = cubeService.getPreviousWinners(cubeId);
+        
+        return ResponseEntity.ok(winners);
     }
 }

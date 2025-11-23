@@ -2,6 +2,7 @@ package com.example.cube.service.impl;
 
 import com.example.cube.dto.request.CreateCubeRequest;
 import com.example.cube.dto.response.CubeActivityResponse;
+import com.example.cube.dto.response.WinnerResponse;
 import com.example.cube.mapper.CubeMapper;
 import com.example.cube.model.*;
 import com.example.cube.repository.*;
@@ -228,6 +229,34 @@ public class CubeServiceImpl implements CubeService {
                     return "User";
                 })
                 .orElse("Unknown User");
+    }
+
+    @Override
+    public List<WinnerResponse> getPreviousWinners(UUID cubeId) {
+        // Get all winners for the cube, ordered by cycle number ascending
+        List<CycleWinner> winners = cycleWinnerRepository.findByCubeIdOrderByCycleNumberAsc(cubeId);
+        
+        // Map to response DTOs
+        return winners.stream().map(winner -> {
+            // Get user name from user_id
+            String userName = getUserName(winner.getUserId());
+            
+            // Get first initial for avatar
+            String userInitial = userName != null && !userName.isEmpty() 
+                ? userName.substring(0, 1).toUpperCase() 
+                : "?";
+            
+            return new WinnerResponse(
+                winner.getWinnerId(),
+                winner.getUserId(),
+                userName,
+                userInitial,
+                winner.getCycleNumber(),
+                winner.getPayoutAmount(),
+                winner.getSelectedAt(),
+                winner.getPayoutSent()
+            );
+        }).collect(Collectors.toList());
     }
 
 }
