@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -257,6 +258,92 @@ public class CubeServiceImpl implements CubeService {
                 winner.getPayoutSent()
             );
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CubeActivityResponse> getUserActivity(UUID userId, int limit) {
+        List<CubeActivityResponse> activities = new ArrayList<>();
+        
+        // 1. Get cubes the user created (top 10 most recent)
+        List<Cube> createdCubes = cubeRepository.findTop10ByUser_idOrderByCreatedAtDesc(userId);
+        for (Cube cube : createdCubes) {
+            CubeActivityResponse activity = new CubeActivityResponse();
+            activity.setActivityType("CUBE_CREATED");
+            activity.setCubeId(cube.getCubeId());
+            activity.setCubeName(cube.getName());
+            activity.setActivityText("You created " + cube.getName());
+            activity.setUserId(userId);
+            activity.setTimestamp(cube.getCreatedAt() != null ? cube.getCreatedAt() : LocalDateTime.now());
+            activity.setColorCode("purple");
+            activities.add(activity);
+        }
+        
+        // 2. Get cubes the user joined (top 20 most recent)
+        List<CubeMember> memberJoins = cubeMemberRepository.findTop20ByUserIdOrderByJoinedAtDesc(userId);
+        for (CubeMember member : memberJoins) {
+            // Get cube details
+            Cube cube = cubeRepository.findById(member.getCubeId()).orElse(null);
+            if (cube == null) continue;
+            
+            CubeActivityResponse activity = new CubeActivityResponse();
+            activity.setActivityType("CUBE_JOINED");
+            activity.setCubeId(cube.getCubeId());
+            activity.setCubeName(cube.getName());
+            activity.setActivityText("You joined " + cube.getName());
+            activity.setUserId(userId);
+            activity.setTimestamp(member.getJoinedAt());
+            activity.setColorCode("blue");
+            activities.add(activity);
+        }
+        
+        // 3. Get user's payments (top 20 most recent)
+        List<Transaction> payments = paymentTransactionRepository.findTop20ByUserIdOrderByCreatedAtDesc(userId);
+        for (Transaction payment : payments) {
+            // Only include completed payments
+            if (payment.getStatusId() == null || payment.getStatusId() != 2) continue;
+            
+            // Get cube details
+            Cube cube = cubeRepository.findById(payment.getCubeId()).orElse(null);
+            if (cube == null) continue;
+            
+            CubeActivityResponse activity = new CubeActivityResponse();
+            activity.setActivityType("PAYMENT");
+            activity.setCubeId(cube.getCubeId());
+            activity.setCubeName(cube.getName());
+            activity.setActivityText("You paid for " + cube.getName());
+            activity.setUserId(userId);
+            activity.setTimestamp(payment.getCreatedAt());
+            activity.setAmount(payment.getAmount());
+            activity.setCycleNumber(payment.getCycleNumber());
+            activity.setColorCode("green");
+            activities.add(activity);
+        }
+        
+        // 4. Get user's wins (top 10 most recent)
+        List<CycleWinner> wins = cycleWinnerRepository.findTop10ByUserIdOrderBySelectedAtDesc(userId);
+        for (CycleWinner win : wins) {
+            // Get cube details
+            Cube cube = cubeRepository.findById(win.getCubeId()).orElse(null);
+            if (cube == null) continue;
+            
+            CubeActivityResponse activity = new CubeActivityResponse();
+            activity.setActivityType("WINNER");
+            activity.setCubeId(cube.getCubeId());
+            activity.setCubeName(cube.getName());
+            activity.setActivityText("You won cycle " + win.getCycleNumber() + " in " + cube.getName());
+            activity.setUserId(userId);
+            activity.setTimestamp(win.getSelectedAt());
+            activity.setAmount(win.getPayoutAmount());
+            activity.setCycleNumber(win.getCycleNumber());
+            activity.setColorCode("yellow");
+            activities.add(activity);
+        }
+        
+        // 5. Sort by timestamp (newest first) and limit
+        return activities.stream()
+                .sorted((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()))
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 
 }

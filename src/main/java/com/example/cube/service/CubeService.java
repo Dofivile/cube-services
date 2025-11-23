@@ -36,4 +36,12 @@ public interface CubeService {
      */
     List<WinnerResponse> getPreviousWinners(UUID cubeId);
 
+    /**
+     * Get recent activity for a user across all their cubes
+     * @param userId User ID
+     * @param limit Maximum number of activities to return
+     * @return List of activities sorted by most recent first
+     */
+    List<CubeActivityResponse> getUserActivity(UUID userId, int limit);
+
 }

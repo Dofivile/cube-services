@@ -26,4 +26,7 @@ public interface CubeRepository extends JpaRepository<Cube, UUID> {
 
     boolean existsByInvitationCode(String invitationCode);
     Optional<Cube> findByInvitationCode(String invitationCode);
+    
+    // Find cubes created by user, ordered by creation date
+    List<Cube> findTop10ByUser_idOrderByCreatedAtDesc(UUID userId);
 }

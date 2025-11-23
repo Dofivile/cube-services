@@ -46,5 +46,11 @@ public interface CubeMemberRepository extends JpaRepository<CubeMember, UUID> {
      * Used for activity feed
      */
     List<CubeMember> findTop20ByCubeIdOrderByJoinedAtDesc(UUID cubeId);
+    
+    /**
+     * Get recent cubes joined by user, ordered by most recent first
+     * Used for user activity feed
+     */
+    List<CubeMember> findTop20ByUserIdOrderByJoinedAtDesc(UUID userId);
 
 }

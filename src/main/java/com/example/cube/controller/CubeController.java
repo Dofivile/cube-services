@@ -167,4 +167,23 @@ public class CubeController {
         
         return ResponseEntity.ok(winners);
     }
+    
+    /**
+     * Get recent activity for the authenticated user across all cubes
+     * 
+     * GET /api/cubes/my-activity?limit=20
+     */
+    @GetMapping("/my-activity")
+    public ResponseEntity<List<CubeActivityResponse>> getMyActivity(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam(defaultValue = "20") int limit) {
+        
+        // Validate auth token and extract user ID
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+        
+        // Get user's activity feed
+        List<CubeActivityResponse> activities = cubeService.getUserActivity(userId, limit);
+        
+        return ResponseEntity.ok(activities);
+    }
 }

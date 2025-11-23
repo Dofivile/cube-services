@@ -28,4 +28,10 @@ public interface CycleWinnerRepository extends JpaRepository<CycleWinner, UUID> 
      * Used for activity feed
      */
     List<CycleWinner> findTop10ByCubeIdOrderBySelectedAtDesc(UUID cubeId);
+    
+    /**
+     * Get recent wins by user, ordered by most recent first
+     * Used for user activity feed
+     */
+    List<CycleWinner> findTop10ByUserIdOrderBySelectedAtDesc(UUID userId);
 }

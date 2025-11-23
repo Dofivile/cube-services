@@ -6,14 +6,16 @@ import java.util.UUID;
 
 public class CubeActivityResponse {
     
-    private String activityType;      // "PAYMENT", "WINNER", "MEMBER_JOIN"
+    private String activityType;      // "PAYMENT", "WINNER", "MEMBER_JOIN", "CUBE_CREATED", "CUBE_JOINED"
     private String activityText;      // "Sarah M. contributed to pool"
     private String userName;          // "Sarah M."
     private UUID userId;
+    private UUID cubeId;              // Which cube this activity is for
+    private String cubeName;          // Name of the cube
     private LocalDateTime timestamp;  // For sorting
     private BigDecimal amount;        // For payments/winners (optional)
     private Integer cycleNumber;      // For payments/winners (optional)
-    private String colorCode;         // "green", "yellow", "blue"
+    private String colorCode;         // "green", "yellow", "blue", "purple"
 
     // Constructors
     public CubeActivityResponse() {}
@@ -49,6 +51,22 @@ public class CubeActivityResponse {
 
     public void setUserId(UUID userId) {
         this.userId = userId;
+    }
+
+    public UUID getCubeId() {
+        return cubeId;
+    }
+
+    public void setCubeId(UUID cubeId) {
+        this.cubeId = cubeId;
+    }
+
+    public String getCubeName() {
+        return cubeName;
+    }
+
+    public void setCubeName(String cubeName) {
+        this.cubeName = cubeName;
     }
 
     public LocalDateTime getTimestamp() {
