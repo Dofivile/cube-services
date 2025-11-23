@@ -276,53 +276,101 @@ public class EmailServiceImpl implements EmailService {
      */
     private String buildWinnerEmailHtml(Cube cube, String winnerName, BigDecimal payoutAmount, Integer cycleNumber) {
         return String.format("""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                </head>
-                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-                    <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
-                        <tr>
-                            <td align="center">
-                                <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; overflow: hidden;">
-                                    <tr>
-                                        <td style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); padding: 30px; text-align: center;">
-                                            <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Cycle Winner Announcement!</h1>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 40px;">
-                                            <h2 style="color: #1f2937; margin-top: 0;">%s</h2>
-                                            
-                                            <div style="background: #f0fdf4; padding: 25px; border-radius: 12px; margin: 20px 0; border: 2px solid #059669; text-align: center;">
-                                                <p style="margin: 0 0 10px 0; font-size: 14px; color: #047857; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">🎊 This Cycle's Winner 🎊</p>
-                                                <p style="margin: 5px 0; font-size: 24px; font-weight: bold; color: #1f2937;">%s</p>
-                                                <p style="margin: 15px 0 5px 0; font-size: 16px; color: #6b7280;"><strong>Payout Amount:</strong></p>
-                                                <p style="margin: 0; color: #059669; font-size: 32px; font-weight: bold;">$%s</p>
-                                                <p style="margin: 15px 0 0 0; font-size: 14px; color: #6b7280;"><strong>Cycle:</strong> %d</p>
-                                            </div>
-                                            
-                                            <p style="color: #4b5563; line-height: 1.6;">
-                                                Congratulations to the winner! 🎊 Thank you to all members for staying consistent with your contributions. 
-                                                The payout will be processed soon.
-                                            </p>
-                                            
-                                            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-                                            
-                                            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-                                                This message was sent automatically by Cube's payout system.
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-                </html>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="color-scheme" content="light only"/>
+  <meta name="supported-color-schemes" content="light"/>
+</head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="padding:32px;background:#ffffff;">
+    <tr><td align="center">
+
+      <table width="560" cellpadding="0" cellspacing="0" border="0" role="presentation" style="
+        max-width:560px;
+        border-radius:24px;
+        border:1px solid #e5e5e5;
+        background:#ffffff;
+        box-shadow:0 1px 3px rgba(0,0,0,0.1);
+        overflow:hidden;
+      ">
+
+        <tr><td align="center" style="padding:40px 32px 24px;background:#f9f9f9;">
+          <img src="%s" width="64" height="64" alt="Cube" style="display:block;margin:0 auto;">
+        </td></tr>
+
+        <tr><td align="center" style="padding:24px 32px 16px;background:#ffffff;">
+          <h1 style="font-size:24px;font-weight:600;font-family:'Playfair Display','Georgia',serif;color:#000000;margin:0;line-height:1.3;">
+            🎉 Cycle Winner Announcement
+          </h1>
+        </td></tr>
+
+        <tr><td style="padding:0 32px;background:#ffffff;">
+          <div style="height:1px;background:#e5e5e5;margin:16px 0;"></div>
+        </td></tr>
+
+        <tr><td style="padding:16px 32px 24px;background:#ffffff;">
+          <p style="margin:0 0 8px 0;font-size:13px;color:#666666;text-align:center;text-transform:uppercase;letter-spacing:0.5px;">
+            %s
+          </p>
+          <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#333333;text-align:center;">
+            Congratulations to this cycle's winner! Thank you to all members for staying consistent with your contributions.
+          </p>
+        </td></tr>
+
+        <tr><td align="center" style="padding:8px 32px 32px;background:#ffffff;">
+          <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="
+            margin:0 auto;
+            padding:24px 32px;
+            border-radius:16px;
+            background:#f0fdf4;
+            border:2px solid #10b981;
+          ">
+            <tr><td align="center">
+              <p style="font-size:11px;color:#047857;letter-spacing:1px;margin:0 0 12px 0;text-transform:uppercase;font-weight:600;">
+                🎊 Winner 🎊
+              </p>
+              <p style="font-size:24px;font-weight:700;color:#000000;margin:0 0 16px 0;">
+                %s
+              </p>
+              <p style="font-size:13px;color:#6b7280;margin:0 0 4px 0;">Payout Amount</p>
+              <p style="font-size:32px;font-weight:700;color:#10b981;margin:0 0 12px 0;">
+                $%s
+              </p>
+              <p style="font-size:13px;color:#6b7280;margin:0;">Cycle %d</p>
+            </td></tr>
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 24px;background:#ffffff;">
+          <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:6px;">
+            <p style="margin:0;font-size:13px;color:#92400e;line-height:1.5;">
+              <strong>Next Steps:</strong> The payout will be processed soon. You'll receive another notification once it's sent.
+            </p>
+          </div>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 32px;background:#ffffff;">
+          <div style="height:1px;background:#e5e5e5;margin:0;"></div>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 24px;background:#ffffff;">
+          <p style="margin:0;font-size:12px;color:#999999;text-align:center;line-height:1.5;">
+            This message was sent automatically by Cube.<br/>
+            Keep contributing to unlock your turn to win!
+          </p>
+        </td></tr>
+
+      </table>
+
+    </td></tr>
+  </table>
+</body>
+</html>
                 """,
+                logoUrl,
                 cube.getName(),
                 winnerName,
                 payoutAmount,
@@ -335,62 +383,118 @@ public class EmailServiceImpl implements EmailService {
      */
     private String buildAdminEmailHtml(Cube cube, String winnerName, String winnerEmail, BigDecimal payoutAmount, Integer cycleNumber, UUID memberId, UUID userId) {
         return String.format("""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                </head>
-                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-                    <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
-                        <tr>
-                            <td align="center">
-                                <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; overflow: hidden;">
-                                    <tr>
-                                        <td style="background: #dc2626; padding: 20px;">
-                                            <h2 style="color: white; margin: 0;">⚠️ Payout Review Required</h2>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 30px;">
-                                            <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                                                <h3 style="margin-top: 0; color: #1f2937;">Cycle Winner Details</h3>
-                                                <table style="width: 100%%; border-collapse: collapse;">
-                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube:</strong></td><td style="padding: 8px 0;">%s</td></tr>
-                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Winner:</strong></td><td style="padding: 8px 0;">%s</td></tr>
-                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Winner Email:</strong></td><td style="padding: 8px 0;">%s</td></tr>
-                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Member ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
-                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>User ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
-                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Amount:</strong></td><td style="padding: 8px 0; color: #059669; font-size: 18px;"><strong>$%s</strong></td></tr>
-                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cycle:</strong></td><td style="padding: 8px 0;">%d</td></tr>
-                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
-                                                </table>
-                                            </div>
-                                            
-                                            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0;">
-                                                <p style="margin: 0; color: #92400e;"><strong>Action Required:</strong> Review and process payout in Stripe dashboard.</p>
-                                            </div>
-                                            
-                                            <p style="color: #6b7280; font-size: 14px;">
-                                                All members have been notified of this winner selection. Please process the payout at your earliest convenience.
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-                </html>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="color-scheme" content="light only"/>
+  <meta name="supported-color-schemes" content="light"/>
+</head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="padding:32px;background:#ffffff;">
+    <tr><td align="center">
+
+      <table width="560" cellpadding="0" cellspacing="0" border="0" role="presentation" style="
+        max-width:560px;
+        border-radius:24px;
+        border:1px solid #e5e5e5;
+        background:#ffffff;
+        box-shadow:0 1px 3px rgba(0,0,0,0.1);
+        overflow:hidden;
+      ">
+
+        <tr><td align="center" style="padding:40px 32px 24px;background:#f9f9f9;">
+          <img src="%s" width="64" height="64" alt="Cube" style="display:block;margin:0 auto;">
+        </td></tr>
+
+        <tr><td align="center" style="padding:24px 32px 16px;background:#ffffff;">
+          <h1 style="font-size:24px;font-weight:600;font-family:'Playfair Display','Georgia',serif;color:#000000;margin:0;line-height:1.3;">
+            ⚠️ Payout Review Required
+          </h1>
+        </td></tr>
+
+        <tr><td style="padding:0 32px;background:#ffffff;">
+          <div style="height:1px;background:#e5e5e5;margin:16px 0;"></div>
+        </td></tr>
+
+        <tr><td style="padding:16px 32px 8px;background:#ffffff;">
+          <p style="margin:0;font-size:13px;color:#666666;text-transform:uppercase;letter-spacing:0.5px;">
+            Cycle Winner Details
+          </p>
+        </td></tr>
+
+        <tr><td style="padding:8px 32px 24px;background:#ffffff;">
+          <table style="width:100%%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:8px 0;color:#6b7280;font-size:13px;"><strong>Cube:</strong></td>
+              <td style="padding:8px 0;color:#000000;font-size:14px;">%s</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#6b7280;font-size:13px;"><strong>Winner:</strong></td>
+              <td style="padding:8px 0;color:#000000;font-size:14px;font-weight:600;">%s</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#6b7280;font-size:13px;"><strong>Winner Email:</strong></td>
+              <td style="padding:8px 0;color:#000000;font-size:14px;">%s</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#6b7280;font-size:13px;"><strong>User ID:</strong></td>
+              <td style="padding:8px 0;color:#000000;font-size:11px;font-family:monospace;">%s</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#6b7280;font-size:13px;"><strong>Member ID:</strong></td>
+              <td style="padding:8px 0;color:#000000;font-size:11px;font-family:monospace;">%s</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#6b7280;font-size:13px;"><strong>Cube ID:</strong></td>
+              <td style="padding:8px 0;color:#000000;font-size:11px;font-family:monospace;">%s</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 0 8px 0;color:#6b7280;font-size:13px;border-top:1px solid #e5e5e5;"><strong>Amount:</strong></td>
+              <td style="padding:12px 0 8px 0;color:#10b981;font-size:20px;font-weight:700;border-top:1px solid #e5e5e5;">$%s</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#6b7280;font-size:13px;"><strong>Cycle:</strong></td>
+              <td style="padding:8px 0;color:#000000;font-size:14px;font-weight:600;">%d</td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 24px;background:#ffffff;">
+          <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:6px;">
+            <p style="margin:0;font-size:13px;color:#92400e;line-height:1.5;">
+              <strong>Action Required:</strong> Review and process payout in Stripe dashboard. All members have been notified.
+            </p>
+          </div>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 32px;background:#ffffff;">
+          <div style="height:1px;background:#e5e5e5;margin:0;"></div>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 24px;background:#ffffff;">
+          <p style="margin:0;font-size:12px;color:#999999;text-align:center;line-height:1.5;">
+            Automated notification from Cube payout system
+          </p>
+        </td></tr>
+
+      </table>
+
+    </td></tr>
+  </table>
+</body>
+</html>
                 """,
+                logoUrl,
                 cube.getName(),
                 winnerName,
                 winnerEmail != null ? winnerEmail : "N/A",
-                memberId,
                 userId,
+                memberId,
+                cube.getCubeId(),
                 payoutAmount,
-                cycleNumber,
-                cube.getCubeId()
+                cycleNumber
         );
     }
 
