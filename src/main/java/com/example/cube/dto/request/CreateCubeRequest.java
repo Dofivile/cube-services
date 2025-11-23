@@ -1,5 +1,6 @@
 package com.example.cube.dto.request;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -24,7 +25,7 @@ public class CreateCubeRequest {
     @NotNull
     private Integer durationId;
     @NotNull
-    @Positive
+    @Min(value = 2, message = "A cube must have at least 2 members")
     private Integer numberofmembers;
     @NotBlank
     private String currency;
