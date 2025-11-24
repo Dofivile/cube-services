@@ -35,7 +35,7 @@ public class CubeMapper {
         res.setCubeId(cube.getCubeId());
         res.setName(cube.getName());
         res.setDescription(cube.getDescription());
-        res.setUser_id(cube.getUser_id());
+        res.setUserId(cube.getUserId());
         res.setAmountPerCycle(cube.getAmountPerCycle());
         res.setNumberofmembers(cube.getNumberofmembers());
         res.setCurrency(cube.getCurrency());
@@ -74,7 +74,7 @@ public class CubeMapper {
     public GetCubeResponse toGetCubeResponse(Cube cube) {
         GetCubeResponse response = new GetCubeResponse();
         response.setCubeId(cube.getCubeId());
-        response.setUserId(cube.getUser_id());
+        response.setUserId(cube.getUserId());
         response.setName(cube.getName());
         response.setDescription(cube.getDescription());
         response.setAmountPerCycle(cube.getAmountPerCycle());

@@ -65,7 +65,7 @@ public class CubeServiceImpl implements CubeService {
         validateCurrency(createCubeRequest);
 
         cube = cubeMapper.toEntity(createCubeRequest);
-        cube.setUser_id(userId);
+        cube.setUserId(userId);
         cube.setDuration(durationRepo.getReferenceById(createCubeRequest.getDurationId()));
         
         // Set goal type: default to "personal" (assuming ID 1) if not provided
@@ -266,7 +266,7 @@ public class CubeServiceImpl implements CubeService {
         List<CubeActivityResponse> activities = new ArrayList<>();
         
         // 1. Get cubes the user created (top 10 most recent)
-        List<Cube> createdCubes = cubeRepository.findTop10ByUser_idOrderByCreatedAtDesc(userId);
+        List<Cube> createdCubes = cubeRepository.findTop10ByUserIdOrderByCreatedAtDesc(userId);
         for (Cube cube : createdCubes) {
             CubeActivityResponse activity = new CubeActivityResponse();
             activity.setActivityType("CUBE_CREATED");

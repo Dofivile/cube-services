@@ -125,7 +125,7 @@ public class StripeConnectServiceImpl implements StripeConnectService {
             user.setStripePayoutsEnabled(payoutsEnabled);
             userDetailsRepository.save(user);
 
-            System.out.println("Updated payout status for user " + user.getUser_id()
+            System.out.println("Updated payout status for user " + user.getUserId()
                     + ": payoutsEnabled=" + payoutsEnabled);
 
         } catch (StripeException e) {

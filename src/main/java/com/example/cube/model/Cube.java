@@ -15,7 +15,7 @@ public class Cube {
     private UUID cubeId;
 
     @Column(name = "user_id", nullable = false, columnDefinition = "uuid")
-    private UUID user_id;
+    private UUID userId;
 
     @Column(nullable = false)
     private String name;
@@ -80,9 +80,9 @@ public class Cube {
 
     public void setDescription(String description) { this.description = description;}
 
-    public UUID getUser_id() { return user_id; }
+    public UUID getUserId() { return userId; }
 
-    public void setUser_id(UUID user_id) { this.user_id = user_id; }
+    public void setUserId(UUID userId) { this.userId = userId; }
 
     public BigDecimal getAmountPerCycle() { return amountPerCycle; }
 

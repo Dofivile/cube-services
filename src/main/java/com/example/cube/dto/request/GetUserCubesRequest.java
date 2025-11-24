@@ -6,13 +6,13 @@ import java.util.UUID;
 
 public class GetUserCubesRequest {
     @NotNull
-    private UUID user_id;
+    private UUID userId;
 
-    public void setUser_id(UUID user_id) {
-        this.user_id = user_id;
+    public void setUserId(UUID userId) {
+        this.userId = userId;
     }
 
-    public UUID getUser_id() {
-        return user_id;
+    public UUID getUserId() {
+        return userId;
     }
 }

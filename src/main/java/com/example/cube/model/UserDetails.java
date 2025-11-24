@@ -9,7 +9,7 @@ public class UserDetails {
 
     @Id
     @Column(name = "user_id", columnDefinition = "uuid")
-    private UUID user_id;
+    private UUID userId;
 
     @Column(name = "first_name")
     private String firstName;
@@ -53,12 +53,12 @@ public class UserDetails {
         this.stripeCustomerId = stripeCustomerId;
     }
 
-    public void setUser_id(UUID user_id) {
-        this.user_id = user_id;
+    public void setUserId(UUID userId) {
+        this.userId = userId;
     }
 
-    public UUID getUser_id() {
-        return user_id;
+    public UUID getUserId() {
+        return userId;
     }
 
     public String getFirstName() {

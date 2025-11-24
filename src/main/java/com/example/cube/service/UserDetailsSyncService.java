@@ -45,7 +45,7 @@ public class UserDetailsSyncService {
 
         UserDetails entity = existing.orElseGet(() -> {
             UserDetails details = new UserDetails();
-            details.setUser_id(userId);
+            details.setUserId(userId);
             return details;
         });
 

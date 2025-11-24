@@ -12,7 +12,7 @@ public class CreateCubeResponse {
     private UUID cubeId;
     private String name;
     private String description;
-    private UUID user_id;
+    private UUID userId;
     private BigDecimal amountPerCycle;
     private Integer numberofmembers;
     private String currency;
@@ -36,8 +36,8 @@ public class CreateCubeResponse {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public UUID getUser_id() { return user_id; }
-    public void setUser_id(UUID user_id) { this.user_id = user_id; }
+    public UUID getUserId() { return userId; }
+    public void setUserId(UUID userId) { this.userId = userId; }
 
     public BigDecimal getAmountPerCycle() { return amountPerCycle; }
     public void setAmountPerCycle(BigDecimal amountPerCycle) { this.amountPerCycle = amountPerCycle; }

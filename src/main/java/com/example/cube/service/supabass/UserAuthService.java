@@ -163,7 +163,7 @@ public class UserAuthService {
     private void saveUserToLocalDB(String userId, SignUpAuthRequest req) {
         try {
             UserDetails user = new UserDetails();
-            user.setUser_id(UUID.fromString(userId));
+            user.setUserId(UUID.fromString(userId));
             user.setFirstName(req.getFirstName());
             user.setLastName(req.getLastName());
             userDetailsRepo.save(user);
