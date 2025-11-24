@@ -712,12 +712,12 @@ public class EmailServiceImpl implements EmailService {
                                     <tr>
                                         <td style="padding: 30px;">
                                             <h3 style="margin-top: 0; color: #1f2937;">Cube Details</h3>
-                                            <table style="width: 100%%; border-collapse: collapse;">
+                                                <table style="width: 100%%; border-collapse: collapse;">
                                                 <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube Name:</strong></td><td style="padding: 8px 0;">%s</td></tr>
                                                 <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Members:</strong></td><td style="padding: 8px 0;">%d</td></tr>
                                                 <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Status:</strong></td><td style="padding: 8px 0; color: #10b981;"><strong>Ready to Start</strong></td></tr>
-                                                <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
-                                            </table>
+                                                    <tr><td style="padding: 8px 0; color: #6b7280;"><strong>Cube ID:</strong></td><td style="padding: 8px 0; font-family: monospace; font-size: 12px;">%s</td></tr>
+                                                </table>
                                             
                                             <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0;">
                                                 <p style="margin: 0; color: #92400e;">
