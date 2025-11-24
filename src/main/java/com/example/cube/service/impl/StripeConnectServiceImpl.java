@@ -39,13 +39,13 @@ public class StripeConnectServiceImpl implements StripeConnectService {
 
     @Override
     @Transactional
-    public String createConnectedAccountAndGetOnboardingLink(UUID userId) {
+    public String createConnectedAccountAndGetOnboardingLink(UUID userId, String returnUrl, String refreshUrl) {
         UserDetails user = userDetailsRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getStripeAccountId() != null) {
             System.out.println("User already has Stripe account: " + user.getStripeAccountId());
-            return generateAccountLink(user.getStripeAccountId());
+            return generateAccountLink(user.getStripeAccountId(), returnUrl, refreshUrl);
         }
 
         try {
@@ -99,7 +99,7 @@ public class StripeConnectServiceImpl implements StripeConnectService {
 
             System.out.println("Created Stripe Connect account: " + account.getId());
 
-            return generateAccountLink(account.getId());
+            return generateAccountLink(account.getId(), returnUrl, refreshUrl);
 
         } catch (StripeException e) {
             System.err.println("Failed to create Stripe account: " + e.getMessage());
@@ -133,18 +133,20 @@ public class StripeConnectServiceImpl implements StripeConnectService {
         }
     }
 
-    private String generateAccountLink(String accountId) {
+    private String generateAccountLink(String accountId, String returnUrl, String refreshUrl) {
         try {
             AccountLinkCreateParams params = AccountLinkCreateParams.builder()
                     .setAccount(accountId)
-                    .setRefreshUrl(frontendUrl + "/onboarding/refresh")
-                    .setReturnUrl(frontendUrl + "/onboarding/complete")
+                    .setRefreshUrl(refreshUrl)
+                    .setReturnUrl(returnUrl)
                     .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
                     .setCollect(AccountLinkCreateParams.Collect.EVENTUALLY_DUE)
                     .build();
 
             AccountLink accountLink = AccountLink.create(params);
             System.out.println("Generated onboarding link for account: " + accountId);
+            System.out.println("Return URL: " + returnUrl);
+            System.out.println("Refresh URL: " + refreshUrl);
             return accountLink.getUrl();
 
         } catch (StripeException e) {

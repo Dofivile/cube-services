@@ -1,6 +1,7 @@
 package com.example.cube.controller;
 
 import com.example.cube.dto.request.CreatePaymentIntentRequest;
+import com.example.cube.dto.request.InitiateOnboardingRequest;
 import com.example.cube.dto.response.PaymentIntentResponse;
 import com.example.cube.repository.UserDetailsRepository;
 import com.example.cube.security.AuthenticationService;
@@ -36,6 +37,9 @@ public class StripeController {
 
     @Value("${stripe.webhook.secret.connect}")
     private String webhookSecretConnect;
+
+    @Value("${cube.frontend.url}")
+    private String frontendUrl;
 
     private final StripePaymentService stripePaymentService;
     private final StripeConnectService stripeConnectService;
@@ -174,16 +178,146 @@ public class StripeController {
     // ==================== ONBOARDING OPERATIONS ====================
 
     @PostMapping("/onboarding/initiate")
-    public ResponseEntity<Map<String, String>> initiateOnboarding(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<Map<String, String>> initiateOnboarding(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody(required = false) InitiateOnboardingRequest request) {
+        
         UUID userId = authenticationService.validateAndExtractUserId(authHeader);
         System.out.println("📝 Initiating Stripe Connect onboarding for user: " + userId);
-        String onboardingUrl = stripeConnectService.createConnectedAccountAndGetOnboardingLink(userId);
+        
+        // Use provided URLs or fallback to defaults
+        String returnUrl = (request != null && request.getReturnUrl() != null) 
+            ? request.getReturnUrl() 
+            : frontendUrl + "/onboarding/complete";
+            
+        String refreshUrl = (request != null && request.getRefreshUrl() != null) 
+            ? request.getRefreshUrl() 
+            : frontendUrl + "/onboarding/refresh";
+        
+        System.out.println("🔗 Using return URL: " + returnUrl);
+        System.out.println("🔗 Using refresh URL: " + refreshUrl);
+        
+        String onboardingUrl = stripeConnectService.createConnectedAccountAndGetOnboardingLink(
+            userId, returnUrl, refreshUrl);
 
         Map<String, String> response = new HashMap<>();
         response.put("onboardingUrl", onboardingUrl);
         response.put("message", "Redirect user to this URL to complete Stripe Connect onboarding");
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/onboarding/return")
+    public ResponseEntity<String> handleOnboardingReturn(
+            @RequestParam(value = "app", required = false) String bundleId) {
+        
+        System.out.println("🔄 Stripe onboarding return callback received");
+        System.out.println("📱 App bundle ID: " + bundleId);
+        
+        // Build the deep link to your mobile app
+        String deepLink = "com.cubemoney.Cube://stripe-return";
+        
+        // Return an HTML page that redirects to the app
+        String html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Redirecting to Cube...</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 100vh;
+                        margin: 0;
+                        padding: 20px;
+                        background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+                        color: white;
+                        text-align: center;
+                    }
+                    h1 { margin-bottom: 10px; }
+                    p { opacity: 0.9; }
+                </style>
+            </head>
+            <body>
+                <h1>✅ Setup Complete!</h1>
+                <p>Redirecting back to Cube app...</p>
+                <script>
+                    // Try to open the app
+                    window.location.href = '%s';
+                    
+                    // Show message if app doesn't open after 2 seconds
+                    setTimeout(function() {
+                        document.body.innerHTML = `
+                            <h1>✅ Setup Complete!</h1>
+                            <p>Please return to the Cube app to continue.</p>
+                            <p style="font-size: 14px; margin-top: 20px;">
+                                If the app didn't open automatically, please open it manually.
+                            </p>
+                        `;
+                    }, 2000);
+                </script>
+            </body>
+            </html>
+            """.formatted(deepLink);
+        
+        return ResponseEntity.ok()
+            .contentType(org.springframework.http.MediaType.TEXT_HTML)
+            .body(html);
+    }
+
+    @GetMapping("/onboarding/refresh")
+    public ResponseEntity<String> handleOnboardingRefresh(
+            @RequestParam(value = "app", required = false) String bundleId) {
+        
+        System.out.println("🔄 Stripe onboarding refresh callback received");
+        System.out.println("📱 App bundle ID: " + bundleId);
+        
+        String deepLink = "com.cubemoney.Cube://stripe-refresh";
+        
+        String html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Restarting Setup...</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 100vh;
+                        margin: 0;
+                        padding: 20px;
+                        background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+                        color: white;
+                        text-align: center;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>🔄 Restarting setup...</h1>
+                <p>Redirecting back to Cube app...</p>
+                <script>
+                    window.location.href = '%s';
+                    setTimeout(function() {
+                        document.body.innerHTML = '<p>Please return to the Cube app.</p>';
+                    }, 1000);
+                </script>
+            </body>
+            </html>
+            """.formatted(deepLink);
+        
+        return ResponseEntity.ok()
+            .contentType(org.springframework.http.MediaType.TEXT_HTML)
+            .body(html);
     }
 
     @GetMapping("/onboarding/status")
