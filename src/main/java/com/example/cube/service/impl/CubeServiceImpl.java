@@ -273,7 +273,7 @@ public class CubeServiceImpl implements CubeService {
             activity.setCubeName(cube.getName());
             activity.setActivityText("You created " + cube.getName());
             activity.setUserId(userId);
-            activity.setTimestamp(cube.getCreatedAt() != null ? cube.getCreatedAt() : LocalDateTime.now());
+            activity.setTimestamp(cube.getCreatedAt() != null ? LocalDateTime.from(cube.getCreatedAt()) : LocalDateTime.now());
             activity.setColorCode("purple");
             activities.add(activity);
         }

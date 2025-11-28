@@ -6,6 +6,7 @@ import com.example.cube.repository.UserDetailsRepository;
 import com.example.cube.security.AuthenticationService;
 import com.example.cube.service.PayoutService;
 import com.example.cube.service.StripeConnectService;
+import com.example.cube.service.StripeEmbeddedOnboardingService;
 import com.example.cube.service.StripePaymentService;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -39,6 +40,7 @@ public class StripeController {
 
     private final StripePaymentService stripePaymentService;
     private final StripeConnectService stripeConnectService;
+    private final StripeEmbeddedOnboardingService stripeEmbeddedOnboardingService;
     private final PayoutService payoutService;
     private final AuthenticationService authenticationService;
     private final UserDetailsRepository userDetailsRepository;
@@ -50,11 +52,13 @@ public class StripeController {
     public StripeController(
             StripePaymentService stripePaymentService,
             StripeConnectService stripeConnectService,
+            StripeEmbeddedOnboardingService stripeEmbeddedOnboardingService,
             PayoutService payoutService,
             AuthenticationService authenticationService,
             UserDetailsRepository userDetailsRepository) {
         this.stripePaymentService = stripePaymentService;
         this.stripeConnectService = stripeConnectService;
+        this.stripeEmbeddedOnboardingService = stripeEmbeddedOnboardingService;
         this.payoutService = payoutService;
         this.authenticationService = authenticationService;
         this.userDetailsRepository = userDetailsRepository;
@@ -226,6 +230,57 @@ public class StripeController {
                 "payoutsEnabled", payoutsEnabled,
                 "message", message
         ));
+    }
+
+    // ==================== EMBEDDED ONBOARDING OPERATIONS (NATIVE MOBILE) ====================
+
+    /**
+     * Initialize embedded onboarding - returns Account Session client secret
+     * for use with Stripe's native mobile SDK components (no webview)
+     */
+    @PostMapping("/onboarding/embedded/initiate")
+    public ResponseEntity<Map<String, String>> initiateEmbeddedOnboarding(
+            @RequestHeader("Authorization") String authHeader) {
+        
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+        System.out.println("📱 Initiating Stripe embedded onboarding for user: " + userId);
+        
+        String clientSecret = stripeEmbeddedOnboardingService.createConnectedAccountAndGetAccountSession(userId);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("clientSecret", clientSecret);
+        response.put("type", "embedded");
+        response.put("message", "Use this client secret with Stripe's embedded component SDK");
+
+        System.out.println("✅ Embedded onboarding initiated successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Check embedded onboarding status
+     * Same as regular check, but with embedded-specific response
+     */
+    @GetMapping("/onboarding/embedded/status")
+    public ResponseEntity<Map<String, Object>> getEmbeddedOnboardingStatus(
+            @RequestHeader("Authorization") String authHeader) {
+
+        UUID userId = authenticationService.validateAndExtractUserId(authHeader);
+
+        var user = userDetailsRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean hasAccount = user.getStripeAccountId() != null;
+        boolean payoutsEnabled = user.getStripePayoutsEnabled() != null && user.getStripePayoutsEnabled();
+        boolean detailsSubmitted = hasAccount && payoutsEnabled;
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("hasStripeAccount", hasAccount);
+        response.put("payoutsEnabled", payoutsEnabled);
+        response.put("detailsSubmitted", detailsSubmitted);
+        response.put("stripeAccountId", user.getStripeAccountId());
+        response.put("onboardingComplete", detailsSubmitted);
+
+        return ResponseEntity.ok(response);
     }
 
     // ==================== PAYOUT OPERATIONS ====================
