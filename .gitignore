@@ -39,3 +39,7 @@ src/main/resources/application.yml
 # Environment files
 .env
 
+# Documentation and reference files
+custom_onboarding
+EMBEDDED_ONBOARDING_GUIDE.md
+

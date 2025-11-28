@@ -26,6 +26,8 @@ public class UserDetails {
     @Column(name = "stripe_payouts_enabled")
     private Boolean stripePayoutsEnabled;
 
+
+
     public void setStripePayoutsEnabled(Boolean stripePayoutsEnabled) {
         this.stripePayoutsEnabled = stripePayoutsEnabled;
     }
