@@ -265,7 +265,10 @@ public class CubeServiceImpl implements CubeService {
         List<CubeActivityResponse> activities = new ArrayList<>();
         
         // 1. Get cubes the user created (top 10 most recent)
-        List<Cube> createdCubes = cubeRepository.findTop10ByUser_idOrderByCreatedAtDesc(userId);
+        List<Cube> createdCubes = cubeRepository.findTop10ByUserIdOrderByCreatedAtDesc(
+            userId, 
+            org.springframework.data.domain.PageRequest.of(0, 10)
+        );
         for (Cube cube : createdCubes) {
             CubeActivityResponse activity = new CubeActivityResponse();
             activity.setActivityType("CUBE_CREATED");

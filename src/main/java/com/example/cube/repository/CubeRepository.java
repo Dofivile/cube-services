@@ -1,8 +1,10 @@
 package com.example.cube.repository;
 
 import com.example.cube.model.Cube;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -27,6 +29,7 @@ public interface CubeRepository extends JpaRepository<Cube, UUID> {
     boolean existsByInvitationCode(String invitationCode);
     Optional<Cube> findByInvitationCode(String invitationCode);
     
-    // Find cubes created by user, ordered by creation date
-    List<Cube> findTop10ByUser_idOrderByCreatedAtDesc(UUID userId);
+    // Find cubes created by user, ordered by creation date (limit 10)
+    @Query("SELECT c FROM Cube c WHERE c.user_id = :userId ORDER BY c.createdAt DESC")
+    List<Cube> findTop10ByUserIdOrderByCreatedAtDesc(@Param("userId") UUID userId, Pageable pageable);
 }
