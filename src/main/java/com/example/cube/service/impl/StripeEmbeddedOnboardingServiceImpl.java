@@ -47,12 +47,25 @@ public class StripeEmbeddedOnboardingServiceImpl implements StripeEmbeddedOnboar
         // Create Stripe connected account if it doesn't exist
         if (user.getStripeAccountId() == null) {
             try {
-                System.out.println("📝 Creating new Stripe Connect account for user: " + userId);
+                System.out.println("📝 Creating new Stripe Custom account for embedded onboarding (user: " + userId + ")");
 
                 AccountCreateParams params = AccountCreateParams.builder()
-                        .setType(AccountCreateParams.Type.EXPRESS)
+                        .setType(AccountCreateParams.Type.CUSTOM)  // Custom account for embedded onboarding without webview
                         .setCountry("US")
                         .setBusinessType(AccountCreateParams.BusinessType.INDIVIDUAL)
+                        // Controller settings for Custom accounts - platform handles requirements
+                        .setController(AccountCreateParams.Controller.builder()
+                                .setFees(AccountCreateParams.Controller.Fees.builder()
+                                        .setPayer(AccountCreateParams.Controller.Fees.Payer.APPLICATION)
+                                        .build())
+                                .setLosses(AccountCreateParams.Controller.Losses.builder()
+                                        .setPayments(AccountCreateParams.Controller.Losses.Payments.APPLICATION)
+                                        .build())
+                                .setRequirementCollection(AccountCreateParams.Controller.RequirementCollection.APPLICATION)
+                                .setStripeDashboard(AccountCreateParams.Controller.StripeDashboard.builder()
+                                        .setType(AccountCreateParams.Controller.StripeDashboard.Type.NONE)
+                                        .build())
+                                .build())
                         // Enable required capabilities
                         .setCapabilities(AccountCreateParams.Capabilities.builder()
                                 .setTransfers(AccountCreateParams.Capabilities.Transfers.builder()
@@ -147,8 +160,9 @@ public class StripeEmbeddedOnboardingServiceImpl implements StripeEmbeddedOnboar
                                                     .setEnabled(true)
                                                     .setFeatures(
                                                             AccountSessionCreateParams.Components.AccountOnboarding.Features.builder()
-                                                                    // For Express accounts, external account collection is enabled by default
-                                                                    // and Stripe user authentication is required
+                                                                    // Disable Stripe user authentication for native embedded experience
+                                                                    // This removes the webview requirement for Custom accounts
+                                                                    .setDisableStripeUserAuthentication(true)
                                                                     .build()
                                                     )
                                                     .build()

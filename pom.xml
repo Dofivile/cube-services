@@ -86,7 +86,7 @@
         <dependency>
             <groupId>com.stripe</groupId>
             <artifactId>stripe-java</artifactId>
-            <version>26.0.0</version>  <!-- or latest version -->
+            <version>28.2.0</version>  <!-- Updated for embedded onboarding features -->
         </dependency>
 
         <dependency>
