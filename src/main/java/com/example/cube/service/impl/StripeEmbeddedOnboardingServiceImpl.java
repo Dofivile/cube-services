@@ -50,7 +50,7 @@ public class StripeEmbeddedOnboardingServiceImpl implements StripeEmbeddedOnboar
                 System.out.println("📝 Creating new Stripe Custom account for embedded onboarding (user: " + userId + ")");
 
                 AccountCreateParams params = AccountCreateParams.builder()
-                        .setType(AccountCreateParams.Type.CUSTOM)  // Custom account for embedded onboarding without webview
+                       // .setType(AccountCreateParams.Type.CUSTOM)  // Custom account for embedded onboarding without webview
                         .setCountry("US")
                         .setBusinessType(AccountCreateParams.BusinessType.INDIVIDUAL)
                         // Controller settings for Custom accounts - platform handles requirements
