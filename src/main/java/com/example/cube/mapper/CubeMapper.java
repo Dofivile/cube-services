@@ -1,12 +1,13 @@
 package com.example.cube.mapper;
 
+import org.springframework.stereotype.Component;
+
 import com.example.cube.dto.request.CreateCubeRequest;
 import com.example.cube.dto.response.CreateCubeResponse;
 import com.example.cube.dto.response.GetCubeResponse;
 import com.example.cube.dto.response.StartCubeResponse;
 import com.example.cube.model.Cube;
 import com.example.cube.model.DurationOption;
-import org.springframework.stereotype.Component;
 
 /**
  * Handles conversions between Cube entities, request DTOs, and response DTOs.
@@ -109,7 +110,6 @@ public class CubeMapper {
             return java.math.BigDecimal.ZERO;
         }
         return cube.getAmountPerCycle()
-                .multiply(java.math.BigDecimal.valueOf(cube.getNumberofmembers()))
                 .multiply(java.math.BigDecimal.valueOf(cube.getNumberofmembers()));
     }
 }
